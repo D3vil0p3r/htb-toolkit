@@ -30,7 +30,7 @@ pub fn play_machine(machine_name: &str) {
     let mut user_info = PlayingUser::get_user(&appkey);
 
     display_target_info(&machine_info, &user_info);
-    change_shell(&mut machine_info, &mut user_info);
+    //change_shell(&mut machine_info, &mut user_info);
 }
 
 pub fn submit_flag() {

@@ -4,6 +4,7 @@ use std::env;
 use crate::colors::*;
 use crate::types::*;
 use pnet::datalink;
+use std::fs;
 use std::net::IpAddr;
 
 pub fn change_shell(machine_info: &mut PlayingMachine, user_info: &mut PlayingUser) {
@@ -70,6 +71,28 @@ end"#,
         let zshrc_content = std::fs::read_to_string(&zshrc).unwrap_or_default();
         let new_zshrc_content = zshrc_content.replace("PROMPT=.*", &prompt);
         std::fs::write(&zshrc, &new_zshrc_content).unwrap_or_default();
+    }
+}
+
+pub fn restore_shell() {
+    let result = env::var("SHELL").unwrap_or_default();
+
+    if result == "bash" {
+        let file = format!("{}/.bashrc.htb.bak", env::var("HOME").unwrap());
+        if fs::metadata(&file).is_ok() {
+            fs::copy(&file, format!("{}/.bashrc", env::var("HOME").unwrap())).expect("Failed to copy file");
+            // Reload the .bashrc file if needed (e.g., using a shell-specific command)
+        }
+    } else if result == "fish" {
+        let file = format!("{}/.config/fish/functions/fish_prompt.fish.htb.bak", env::var("HOME").unwrap());
+        if fs::metadata(&file).is_ok() {
+            fs::rename(&file, format!("{}/.config/fish/functions/fish_prompt.fish", env::var("HOME").unwrap())).expect("Failed to rename file");
+        }
+    } else if result == "zsh" {
+        let file = format!("{}/.zshrc.htb.bak", env::var("HOME").unwrap());
+        if fs::metadata(&file).is_ok() {
+            fs::copy(&file, format!("{}/.zshrc", env::var("HOME").unwrap())).expect("Failed to copy file");
+        }
     }
 }
 

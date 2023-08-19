@@ -11,12 +11,18 @@ pub fn fetch_api(api_url: &str, appkey: &str) -> Result<serde_json::Value, reqwe
     let response = client.get(api_url)
         .header("Authorization", format!("Bearer {}", appkey))
         .header("content-type", "application/json" )
-        .send()
-        .unwrap()
-        .text()
-        .unwrap();
+        .send()?;
 
-    let json_data = serde_json::from_str(&response).expect("JSON Parsing Error");
+    let response_text = response.text()?;
+    //println!("Response Body: {:?}", response_text); //DEBUG
+
+    let json_data: serde_json::Value = serde_json::from_str(&response_text).expect("JSON Parsing Error");
+
+    // Accessing a specific field from the JSON data //DEBUG
+    /*if let Some(field_value) = json_data.get("info") {
+        println!("Field Value: {:?}", field_value);
+    }
+    std::process::exit(1);*/
 
     Ok(json_data)
 }
