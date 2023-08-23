@@ -92,17 +92,27 @@ pub fn submit_flag() {
         .header("Content-Type", "application/json")
         .header("Authorization", format!("Bearer {}", appkey))
         .send();
-
+  
     match response {
         Ok(resp) => {
-            if resp.status().is_success() {
+            let status = resp.status();
+            if status.is_success() {
                 // Print the response text
                 let response_text = resp.text().expect("Failed to read response text");
-                println!("Response: {}", response_text);
-                /*let message: serde_json::Value = resp.json().expect("Failed to parse JSON");
-                println!("{}", message["message"]);*/
+                println!("{}", response_text);
             } else {
-                println!("Request failed with status: {}. Possible causes:\n- Your API key is incorrect or expired. Renew your API key by running htb-update\n- Your API key is not related to a VIP subscription", resp.status());
+                // Status 400: Incorrect flag
+                let response_text = resp.text().expect("Failed to read response text");
+                let parsed_response: Result<serde_json::Value, _> = serde_json::from_str(&response_text);
+
+                if let Ok(json) = parsed_response {
+                    if let Some(message) = json.get("message").and_then(|m| m.as_str()) {
+                        println!("{}", message);
+                    }
+                } else {
+                    eprintln!("Request failed with status: {}", status);
+                    std::process::exit(1);
+                }
             }
         }
         Err(err) => {
@@ -162,7 +172,7 @@ pub fn submit_flag() {
                         let message: serde_json::Value = response.json().expect("Failed to parse JSON");
                         println!("{}", message["message"]);
                     } else {
-                        eprintln!("Error. Maybe your API key is incorrect or expired. Renew your API key by running htb-update.");
+                        println!("Request failed with status: {}", response.status());
                         std::process::exit(1);
                     }
     

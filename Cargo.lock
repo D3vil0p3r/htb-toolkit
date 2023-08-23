@@ -270,6 +270,7 @@ name = "htb-toolkit"
 version = "0.1.0"
 dependencies = [
  "pnet",
+ "regex",
  "reqwest",
  "serde",
  "serde_json",

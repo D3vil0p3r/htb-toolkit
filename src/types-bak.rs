@@ -145,17 +145,15 @@ impl PlayingMachine {
 
         let base_api: &str = "https://www.hackthebox.com/api/v4/machine/profile/";
         let call_api = format!("{}{}", base_api, machine_name);
-
         let result = fetch_api(&call_api, &appkey);
 
         match result {
             Ok(json_data) => {
-                if let Some(message) = json_data.get("message").and_then(|m| m.as_str()) {
+                if let Some(message) = json_data.get("message").and_then(|m| m.as_str()) { //for the invoked API, "message" field is present only when Machine not found or Starting Point machine
                     if message.contains("Machine not found") {
                         eprintln!("\x1B[31m{}.\x1B[0m", message);
                         process::exit(1); // Exit with a non-zero status code
-                    }
-                    else if message.contains("Starting Point Machine") {
+                    } else if message.contains("Starting Point Machine") {
                         let tier_id = &json_data["tierId"].as_u64().unwrap();
                         let get_req = format!(
                             "https://www.hackthebox.com/api/v4/sp/tier/{}",
@@ -163,33 +161,53 @@ impl PlayingMachine {
                         );
                     
                         let sub_result = fetch_api(get_req.as_str(), &appkey);
-                        if let Ok(sub_json_data) = sub_result {
-                            let machine_ip = get_machine_ip(&sub_json_data, &appkey);
-                            let sub_entry = &sub_json_data["info"];
                         
+                        if let Ok(sub_json_data) = sub_result {
+                            for sub_entry in sub_json_data["data"]["machines"].as_array().unwrap().iter() {
+
+                                let name = sub_entry["name"].as_str().unwrap_or("Name not available").to_string();
+
+                                if name == machine_name {
+                                    return PlayingMachine {
+                                        id: sub_entry["id"].as_u64().unwrap(),
+                                        name: sub_entry["name"].as_str().unwrap_or("Name not available").to_string(),
+                                        points: 0,
+                                        difficulty_str: sub_entry["difficultyText"].as_str().unwrap_or("Difficulty not available").to_string(),
+                                        user_pwn: sub_entry["userOwn"].as_str().unwrap_or("null").to_string(),
+                                        root_pwn: sub_entry["rootOwn"].as_str().unwrap_or("null").to_string(),
+                                        free: true,
+                                        os: sub_entry["os"].as_str().unwrap_or("null").to_string(),
+                                        ip: String::from("null"), //The IP of Starting Machines can be retrieved only when they are run
+                                        review: false,
+                                        avatar: sub_entry["avatar"].as_str().unwrap_or("null").to_string(),
+                                    };
+                                }                   
+                            }           
                             return PlayingMachine {
-                                id: sub_entry["id"].as_u64().unwrap(),
-                                name: sub_entry["name"].as_str().unwrap_or("Name not available").to_string(),
+                                id: 0,
+                                name: String::new(),
                                 points: 0,
-                                difficulty_str: sub_entry["difficultyText"].as_str().unwrap_or("Difficulty not available").to_string(),
-                                user_pwn: sub_entry["userOwn"].as_str().unwrap_or("null").to_string(),
-                                root_pwn: sub_entry["rootOwn"].as_str().unwrap_or("null").to_string(),
-                                free: true,
-                                os: sub_entry["os"].as_str().unwrap_or("null").to_string(),
-                                ip: machine_ip,
+                                difficulty_str: String::new(),
+                                user_pwn: String::new(),
+                                root_pwn: String::new(),
+                                free: false,
+                                os: String::new(),
+                                ip: String::new(),
                                 review: false,
-                                avatar: sub_entry["avatar"].as_str().unwrap_or("null").to_string(),
+                                avatar: String::new(),
                             };
                         } else {
                             eprintln!("\x1B[31mError fetching Starting Point data.\x1B[0m");
                             process::exit(1); // Exit with a non-zero status code
                         }
+                    } else { 
+                        
                     }
                 }
-
+                //For single Active or Retired Machine, json_data has not "message" field but "info" field
                 let entry = &json_data["info"];
 
-                PlayingMachine {
+                return PlayingMachine {
                     id: entry["id"].as_u64().unwrap(),
                     name: entry["name"].as_str().unwrap_or("Name not available").to_string(),
                     points: entry["points"].as_u64().unwrap_or(0),
@@ -201,7 +219,7 @@ impl PlayingMachine {
                     ip: entry["ip"].as_str().unwrap_or("null").to_string(),
                     review: entry["authUserHasReviewed"].as_bool().unwrap_or(false),
                     avatar: entry["avatar"].as_str().unwrap_or("null").to_string(),
-                }         
+                };   
             }
             Err(err) => {
                 if err.is_timeout() {

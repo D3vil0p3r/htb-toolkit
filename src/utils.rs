@@ -177,22 +177,42 @@ pub fn get_help() {
     // Display Help
     println!("HTB Play allows you to spawn Hack The Box machines from CLI.");
     println!();
-    println!("{} [-h] [-a] [-f] [-m] <machine-name> [-l] [-r] [-s] [-t] [-u] [-v]", env::args().nth(0).unwrap());
+    println!("{} [-h] [-a] [-f] [-m] <machine-name> [-l] [-p] <true|false> [-r] [-s] [-t] [-u] [-v] [-z] <set|reset|delete>", env::args().nth(0).unwrap());
     println!();
     println!("Options:");
-    println!("a     List active machines.");
-    println!("f     Submit a flag.");
-    println!("h     Print this Help.");
-    println!("m     Specify the machine name to play.");
-    println!("l     List retired machines.");
-    println!("r     Reset the playing machine.");
-    println!("s     Stop the playing machine.");
-    println!("t     List starting point machines.");
-    println!("u     Update the Hack The Box App Key.");
-    println!("v     Set a Hack The Box VPN.");
+    println!("-a                       List active machines.");
+    println!("-f                       Submit a flag.");
+    println!("-h                       Print this help.");
+    println!("-m <machine-name>        Specify the machine name to play.");
+    println!("-l                       List retired machines.");
+    println!("-p <true|false>          Set if the shell prompt should be changed.");
+    println!("-r                       Reset the playing machine.");
+    println!("-s                       Stop the playing machine.");
+    println!("-t                       List starting point machines.");
+    println!("-u                       Update active machines in the Red Team menu.");
+    println!("-v                       Set a Hack The Box VPN.");
+    println!("-z <set|reset|delete>    Set, reset or delete the Hack The Box App Key.");
     println!();
     println!("Usage Examples:");
     println!("{} ", env::args().nth(0).unwrap());
     println!("{} -a", env::args().nth(0).unwrap());
     println!("{} -m RouterSpace", env::args().nth(0).unwrap());
+    println!("{} -u", env::args().nth(0).unwrap());
+    println!("{} -z set", env::args().nth(0).unwrap());
+}
+
+pub fn is_wsl() -> bool {
+    if let Ok(uname) = fs::read_to_string("/proc/sys/kernel/osrelease") {
+        uname.contains("Microsoft") || uname.contains("WSL")
+    } else {
+        false
+    }
+}
+
+pub fn is_display_zero() -> bool {
+    if let Ok(display_value) = env::var("DISPLAY") {
+        display_value == ":0"
+    } else {
+        false
+    }
 }

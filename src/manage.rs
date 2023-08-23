@@ -1,9 +1,14 @@
 use crate::appkey::get_appkey;
+use crate::appkey::set_appkey;
+use crate::appkey::reset_appkey;
+use crate::appkey::delete_appkey;
 use crate::colors::*;
 use crate::types::*;
 use crate::utils::*;
 use reqwest::blocking::{Client, Response};
 use std::env;
+use std::fs;
+use regex::Regex;
 
 pub fn reset_machine() {
     let appkey = get_appkey();
@@ -64,12 +69,41 @@ pub fn stop_machine() {
     }
 }
 
-pub fn update_app_key() {
-    println!("Updating the Hack The Box App Key...");
-    // Your implementation here
+pub fn prompt_setting(option: &str) {
+    let home = env::var("HOME").unwrap_or_default();
+    let htb_config = format!("{}/.htb.conf", home);
+
+    let mut content = fs::read_to_string(&htb_config)
+        .expect("Failed to read HTB config file");
+
+    let re = Regex::new(r"prompt_change=\w+")
+        .expect("Failed to create regular expression");
+
+    let new_content = re.replace(&content, format!("prompt_change={}", option));
+
+    fs::write(&htb_config, new_content.to_string())
+        .expect("Failed to write updated content to HTB config file");
+
+    println!("Prompt setting updated to: {}", option);
+}
+
+pub fn update_machines() {
+    let appkey = get_appkey();
 }
 
 pub fn set_vpn() {
     println!("Setting a Hack The Box VPN...");
     // Your implementation here
+}
+
+pub fn manage_app_key(option: &str) {
+    if option == "set" {
+        set_appkey();
+    }
+    else if option == "reset" {
+        reset_appkey();
+    }
+    else if option == "delete" {
+        delete_appkey();
+    }
 }
