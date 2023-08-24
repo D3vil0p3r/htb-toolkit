@@ -180,25 +180,23 @@ pub fn get_help() {
     println!("{} [-h] [-a] [-f] [-m] <machine-name> [-l] [-p] <true|false> [-r] [-s] [-t] [-u] [-v] [-z] <set|reset|delete>", env::args().nth(0).unwrap());
     println!();
     println!("Options:");
-    println!("-a                       List active machines.");
-    println!("-f                       Submit a flag.");
-    println!("-h                       Print this help.");
-    println!("-m <machine-name>        Specify the machine name to play.");
-    println!("-l                       List retired machines.");
-    println!("-p <true|false>          Set if the shell prompt should be changed.");
-    println!("-r                       Reset the playing machine.");
-    println!("-s                       Stop the playing machine.");
-    println!("-t                       List starting point machines.");
-    println!("-u                       Update active machines in the Red Team menu.");
-    println!("-v                       Set a Hack The Box VPN.");
-    println!("-z <set|reset|delete>    Set, reset or delete the Hack The Box App Key.");
+    println!("-f                            Submit a flag.");
+    println!("-h                            Print this help.");
+    println!("-k <set|reset|delete>         Set, reset or delete the Hack The Box App Key.");
+    println!("-m <machine-name>             Specify the machine name to play.");
+    println!("-l <active|retired|starting>  List active, retired or starting point machines.");
+    println!("-p <true|false>               Set if the shell prompt should be changed.");
+    println!("-r                            Reset the playing machine.");
+    println!("-s                            Stop the playing machine.");
+    println!("-u                            Update active machines in the Red Team menu.");
+    println!("-v                            Set a Hack The Box VPN.");
     println!();
     println!("Usage Examples:");
     println!("{} ", env::args().nth(0).unwrap());
-    println!("{} -a", env::args().nth(0).unwrap());
+    println!("{} -k set", env::args().nth(0).unwrap());
+    println!("{} -l active", env::args().nth(0).unwrap());
     println!("{} -m RouterSpace", env::args().nth(0).unwrap());
     println!("{} -u", env::args().nth(0).unwrap());
-    println!("{} -z set", env::args().nth(0).unwrap());
 }
 
 pub fn is_wsl() -> bool {

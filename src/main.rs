@@ -66,12 +66,15 @@ fn main() {
             }
             get_help();
         }
-        "-a" => {
-            let mtype = "active";
-            list_machines(mtype);
-        }
         "-f" => {
             submit_flag();
+        }
+        "-k" => {
+            if args.len() < 3 || (args[2] != "set" && args[2] != "reset" && args[2] != "delete") {
+                println!("Usage: {} -k <set|reset|delete>", args[0]);
+            } else {
+                manage_app_key(&args[2]);
+            }
         }
         "-m" => {
             if args.len() < 3 {
@@ -81,8 +84,13 @@ fn main() {
             }
         }
         "-l" => {
-            let mtype = "retired";
-            list_machines(mtype);
+            if args.len() < 3 || (args[2] != "active" && args[2] != "retired" && args[2] != "starting") {
+                println!("Usage: {} -l <active|retired|starting>", args[0]);
+            } else if args[2] == "active" || args[2] == "retired" {
+                list_machines(&args[2]);
+            } else if args[2] == "starting" {
+                list_sp_machines(&args[2]);
+            } 
         }
         "-p" => {
             if args.len() < 3 || (args[2] != "true" && args[2] != "false") {
@@ -97,22 +105,11 @@ fn main() {
         "-s" => {
             stop_machine();
         }
-        "-t" => {
-            let mtype = "starting";
-            list_sp_machines(mtype);
-        }
         "-u" => {
             update_machines();
         }
         "-v" => {
             set_vpn();
-        }
-        "-z" => {
-            if args.len() < 3 || (args[2] != "set" && args[2] != "reset" && args[2] != "delete") {
-                println!("Usage: {} -u <set|reset|delete>", args[0]);
-            } else {
-                manage_app_key(&args[2]);
-            }
         }
         _ => {
             match print_banner() {
