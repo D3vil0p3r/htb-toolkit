@@ -10,6 +10,14 @@ use std::env;
 use std::fs;
 use regex::Regex;
 
+pub fn get_active_machine_info() {
+    let appkey = get_appkey();
+
+    let active_machine = ActiveMachine::get_active(&appkey);
+
+    ActiveMachine::print_active(&active_machine);
+}
+
 pub fn reset_machine() {
     let appkey = get_appkey();
     let client = Client::new();
@@ -88,7 +96,56 @@ pub fn prompt_setting(option: &str) {
 }
 
 pub fn update_machines() {
-    let appkey = get_appkey();
+    /*let appkey = get_appkey();
+
+    println!("Retrieving updated data from Hack The Box... Gimme some time hackerzzz...");
+
+    let machine_config = "machine_config.json";
+    let input_config = "input_config.dump";
+    let output_config = "output_config.dump";
+
+    let response = reqwest::blocking::get(&format!(
+        "https://www.hackthebox.com/api/v4/machine/list"
+    ))
+    .unwrap();
+    let machine_config_content = response.text().unwrap();
+    fs::write(machine_config, &machine_config_content)?;
+
+    let machine_config_content = fs::read_to_string(machine_config)?;
+
+    let data: serde_json::Value = serde_json::from_str(&machine_config_content)?;
+
+    fs::remove_file(machine_config)?;
+
+    let param = "info";
+    let fly_new = htb_machines_to_flypie(&data, param);
+
+    fs::write(input_config, &fs::read_to_string("/org/gnome/shell/extensions/flypie/")?)?;
+
+    let mut input_config_content = String::new();
+    File::open(input_config)?.read_to_string(&mut input_config_content)?;
+
+    fs::remove_file(input_config)?;
+
+    let fly_out = input_config_content.replace(
+        r#""name":"Available Machines","icon":"/usr/share/icons/htb-tools/htb-machines.png","type":"CustomMenu","children":"#,
+        &format!(
+            r#""name":"Available Machines","icon":"{}","type":"CustomMenu","children":"#,
+            fly_new
+        ),
+    );
+
+    fs::write(output_config, &fly_out)?;
+
+    fs::write("/org/gnome/shell/extensions/flypie/", &fs::read_to_string(output_config)?)?;
+
+    fs::remove_file(output_config)?;
+
+    println!("Done. Press Enter to continue...");
+    let mut input = String::new();
+    io::stdin().read_line(&mut input)?;
+
+    Ok(())*/
 }
 
 pub fn set_vpn() {

@@ -26,7 +26,7 @@ fn main() {
     }
 
     // Initialization
-    // Create avatar folder for active machine icons
+    // Create avatar folder for free machine icons
     let home = env::var("HOME").unwrap_or_default();
     let folder_path = format!("{}/.local/share/icons/hackthebox/avatar", home);
 
@@ -66,6 +66,9 @@ fn main() {
             }
             get_help();
         }
+        "-a" => {
+            get_active_machine_info();
+        }
         "-f" => {
             submit_flag();
         }
@@ -84,9 +87,9 @@ fn main() {
             }
         }
         "-l" => {
-            if args.len() < 3 || (args[2] != "active" && args[2] != "retired" && args[2] != "starting") {
-                println!("Usage: {} -l <active|retired|starting>", args[0]);
-            } else if args[2] == "active" || args[2] == "retired" {
+            if args.len() < 3 || (args[2] != "free" && args[2] != "retired" && args[2] != "starting") {
+                println!("Usage: {} -l <free|retired|starting>", args[0]);
+            } else if args[2] == "free" || args[2] == "retired" {
                 list_machines(&args[2]);
             } else if args[2] == "starting" {
                 list_sp_machines(&args[2]);

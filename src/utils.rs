@@ -177,24 +177,25 @@ pub fn get_help() {
     // Display Help
     println!("HTB Play allows you to spawn Hack The Box machines from CLI.");
     println!();
-    println!("{} [-h] [-a] [-f] [-m] <machine-name> [-l] [-p] <true|false> [-r] [-s] [-t] [-u] [-v] [-z] <set|reset|delete>", env::args().nth(0).unwrap());
+    println!("{} [-h] [-a] [-f] [-k] <set|reset|delete> [-m] <machine-name> [-l] <free|retired|starting> [-p] <true|false> [-r] [-s] [-u] [-v]", env::args().nth(0).unwrap());
     println!();
     println!("Options:");
+    println!("-a                            Print information about the current active machine.");
     println!("-f                            Submit a flag.");
     println!("-h                            Print this help.");
     println!("-k <set|reset|delete>         Set, reset or delete the Hack The Box App Key.");
     println!("-m <machine-name>             Specify the machine name to play.");
-    println!("-l <active|retired|starting>  List active, retired or starting point machines.");
+    println!("-l <free|retired|starting>    List free, retired or starting point machines.");
     println!("-p <true|false>               Set if the shell prompt should be changed.");
     println!("-r                            Reset the playing machine.");
     println!("-s                            Stop the playing machine.");
-    println!("-u                            Update active machines in the Red Team menu.");
+    println!("-u                            Update free machines in the Red Team menu.");
     println!("-v                            Set a Hack The Box VPN.");
     println!();
     println!("Usage Examples:");
     println!("{} ", env::args().nth(0).unwrap());
     println!("{} -k set", env::args().nth(0).unwrap());
-    println!("{} -l active", env::args().nth(0).unwrap());
+    println!("{} -l free", env::args().nth(0).unwrap());
     println!("{} -m RouterSpace", env::args().nth(0).unwrap());
     println!("{} -u", env::args().nth(0).unwrap());
 }

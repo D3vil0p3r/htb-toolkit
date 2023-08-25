@@ -62,7 +62,7 @@ pub fn list_machines(machine_type: &str) -> Vec<Machine> {
     let appkey = get_appkey(); // Retrieve the app key
 
     let result = match machine_type {
-        "active" => fetch_api("https://www.hackthebox.com/api/v4/machine/list", &appkey),
+        "free" => fetch_api("https://www.hackthebox.com/api/v4/machine/list", &appkey),
         "retired" => fetch_api("https://www.hackthebox.com/api/v4/machine/list/retired", &appkey),
         _ => {
             eprintln!("\x1B[31mInvalid machine type: {}\x1B[0m", machine_type);
