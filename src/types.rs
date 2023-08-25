@@ -237,18 +237,27 @@ impl PlayingMachine {
                 }
 
                 let entry = &json_data["info"];
+                let name = entry["name"]
+                            .as_str()
+                            .unwrap_or("Name not available")
+                            .to_string();
+                let os = entry["os"]
+                            .as_str()
+                            .unwrap_or("null")
+                            .to_string();
+                let machine_name_os_icon = Self::get_os_icon(name, &os);
 
                 PlayingMachine {
                     machine: Machine {
                         id: entry["id"].as_u64().unwrap(),
-                        name: entry["name"].as_str().unwrap_or("Name not available").to_string(),
+                        name: machine_name_os_icon,
                         points: entry["points"].as_u64().unwrap_or(0),
                         difficulty_str: entry["difficultyText"].as_str().unwrap_or("Difficulty not available").to_string(),
                         user_pwn: entry["authUserInUserOwns"].as_str().unwrap_or("null").to_string(),
                         root_pwn: entry["authUserInRootOwns"].as_str().unwrap_or("null").to_string(),
                         free: entry["free"].as_bool().unwrap_or(false),
                     },
-                    os: entry["os"].as_str().unwrap_or("null").to_string(),
+                    os: os,
                     ip: entry["ip"].as_str().unwrap_or("null").to_string(),
                     review: entry["authUserHasReviewed"].as_bool().unwrap_or(false),
                     avatar: entry["avatar"].as_str().unwrap_or("null").to_string(),
