@@ -109,7 +109,15 @@ impl ActiveMachine {
     }
 }
 
-pub struct PlayingMachine {
+pub struct SPMachine {
+    pub id: u64,
+    pub name: String,
+    pub difficulty_str: String,
+    pub tier: u64,
+}
+
+#[derive(Clone)]
+pub struct Machine {
     pub id: u64,
     pub name: String,
     pub points: u64,
@@ -117,6 +125,10 @@ pub struct PlayingMachine {
     pub user_pwn: String,
     pub root_pwn: String,
     pub free: bool,
+}
+
+pub struct PlayingMachine {
+    pub machine: Machine,
     pub os: String,
     pub ip: String,
     pub review: bool,
@@ -125,8 +137,7 @@ pub struct PlayingMachine {
 
 impl PlayingMachine {
 
-    pub fn new() -> Self {
-        PlayingMachine {
+    const MACHINE: Machine = Machine {
             id: 0,
             name: String::new(),
             points: 0,
@@ -134,6 +145,11 @@ impl PlayingMachine {
             user_pwn: String::new(),
             root_pwn: String::new(),
             free: false,
+        };
+
+    pub fn new() -> Self {
+        PlayingMachine {
+            machine: Self::MACHINE.clone(),
             os: String::new(),
             ip: String::new(),
             review: false,
@@ -168,13 +184,27 @@ impl PlayingMachine {
                             let sub_entry = &sub_json_data["info"];
                         
                             return PlayingMachine {
-                                id: sub_entry["id"].as_u64().unwrap(),
-                                name: sub_entry["name"].as_str().unwrap_or("Name not available").to_string(),
-                                points: 0,
-                                difficulty_str: sub_entry["difficultyText"].as_str().unwrap_or("Difficulty not available").to_string(),
-                                user_pwn: sub_entry["userOwn"].as_str().unwrap_or("null").to_string(),
-                                root_pwn: sub_entry["rootOwn"].as_str().unwrap_or("null").to_string(),
-                                free: true,
+                                machine: Machine {
+                                    id: sub_entry["id"].as_u64().unwrap(),
+                                    name: sub_entry["name"]
+                                        .as_str()
+                                        .unwrap_or("Name not available")
+                                        .to_string(),
+                                    points: 0,
+                                    difficulty_str: sub_entry["difficultyText"]
+                                        .as_str()
+                                        .unwrap_or("Difficulty not available")
+                                        .to_string(),
+                                    user_pwn: sub_entry["userOwn"]
+                                        .as_str()
+                                        .unwrap_or("null")
+                                        .to_string(),
+                                    root_pwn: sub_entry["rootOwn"]
+                                        .as_str()
+                                        .unwrap_or("null")
+                                        .to_string(),
+                                    free: true,
+                                },
                                 os: sub_entry["os"].as_str().unwrap_or("null").to_string(),
                                 ip: machine_ip,
                                 review: false,
@@ -190,13 +220,15 @@ impl PlayingMachine {
                 let entry = &json_data["info"];
 
                 PlayingMachine {
-                    id: entry["id"].as_u64().unwrap(),
-                    name: entry["name"].as_str().unwrap_or("Name not available").to_string(),
-                    points: entry["points"].as_u64().unwrap_or(0),
-                    difficulty_str: entry["difficultyText"].as_str().unwrap_or("Difficulty not available").to_string(),
-                    user_pwn: entry["authUserInUserOwns"].as_str().unwrap_or("null").to_string(),
-                    root_pwn: entry["authUserInRootOwns"].as_str().unwrap_or("null").to_string(),
-                    free: entry["free"].as_bool().unwrap_or(false),
+                    machine: Machine {
+                        id: entry["id"].as_u64().unwrap(),
+                        name: entry["name"].as_str().unwrap_or("Name not available").to_string(),
+                        points: entry["points"].as_u64().unwrap_or(0),
+                        difficulty_str: entry["difficultyText"].as_str().unwrap_or("Difficulty not available").to_string(),
+                        user_pwn: entry["authUserInUserOwns"].as_str().unwrap_or("null").to_string(),
+                        root_pwn: entry["authUserInRootOwns"].as_str().unwrap_or("null").to_string(),
+                        free: entry["free"].as_bool().unwrap_or(false),
+                    },
                     os: entry["os"].as_str().unwrap_or("null").to_string(),
                     ip: entry["ip"].as_str().unwrap_or("null").to_string(),
                     review: entry["authUserHasReviewed"].as_bool().unwrap_or(false),

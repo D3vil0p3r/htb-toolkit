@@ -1,57 +1,44 @@
 use crate::appkey::get_appkey;
 use crate::api::fetch_api;
 use crate::colors::*;
+use crate::types::*;
 
-struct Machine<'a> {
-    id: u64,
-    name: &'a str,
-    points: u64,
-    difficulty_str: &'a str,
-    user_pwn: &'a str,
-    root_pwn: &'a str,
-    free: bool,
-}
-
-struct SPMachine<'a> {
-    id: u64,
-    name: &'a str,
-    difficulty_str: &'a str,
-}
-
-pub fn list_sp_machines(machine_type: &str) {
-    
+pub fn list_sp_machines(machine_type: &str) -> Vec<SPMachine> {
     let tiers = 3;
 
     println!("\x1B[93mConnecting to HTB server...\x1B[0m\n");
     let appkey = get_appkey();
 
+    let mut all_sp_machine_list: Vec<SPMachine> = Vec::new();
+
     for index in 1..=tiers {
         let mut sp_machine_list: Vec<SPMachine> = Vec::new();
-        let tier_lvl = index-1;
+        let tier_lvl = index - 1;
         let result = match machine_type {
-            "starting" => fetch_api(&("https://www.hackthebox.com/api/v4/sp/tier/".to_owned()+index.to_string().as_str()), &appkey),
+            "starting" => fetch_api(&("https://www.hackthebox.com/api/v4/sp/tier/".to_owned() + index.to_string().as_str()), &appkey),
             _ => {
                 eprintln!("\x1B[31mInvalid machine type: {}\x1B[0m", machine_type);
-                return;
+                continue;
             }
         };
-        
+
         match result {
             Ok(json_data) => {
                 println!("\x1B[92mDone.\x1B[0m\n");
 
                 for entry in json_data["data"]["machines"].as_array().unwrap().iter() {
-
-                    let id = entry["id"].as_u64().unwrap(); //if a field represents a specific type (i.e., a number), serde_json will parse it as a number, not like a str s you need to use as_<type>
+                    let id = entry["id"].as_u64().unwrap();
                     let name = entry["name"].as_str().unwrap_or("Name not available");
                     let difficulty_str = entry["difficultyText"].as_str().unwrap_or("Difficulty not available");
 
-                    let sp_machine = SPMachine {id: id, name: name, difficulty_str: difficulty_str};
+                    let sp_machine = SPMachine { id, name: name.to_string(), difficulty_str: difficulty_str.to_string(), tier: tier_lvl };
 
                     sp_machine_list.push(sp_machine);
                 }
                 println!("{}Tier {} Starting Point machines:{}\n", BYELLOW, tier_lvl, RESET);
                 display_table_sp(&sp_machine_list);
+
+                all_sp_machine_list.extend(sp_machine_list);
             }
             Err(err) => {
                 if err.is_timeout() {
@@ -59,17 +46,17 @@ pub fn list_sp_machines(machine_type: &str) {
                 } else {
                     eprintln!("\x1B[31mError. Maybe your API key is incorrect or expired. Renew your API key by running htb-update.\x1B[0m");
                 }
-                return;
             }
         }
     }
+    
+    all_sp_machine_list
 }
 
-pub fn list_machines(machine_type: &str) {
+pub fn list_machines(machine_type: &str) -> Vec<Machine> {
     let mut machine_list: Vec<Machine> = Vec::new();
 
     println!("Listing machines...");
-
     println!("\x1B[93mConnecting to HTB server...\x1B[0m\n");
 
     let appkey = get_appkey(); // Retrieve the app key
@@ -79,7 +66,7 @@ pub fn list_machines(machine_type: &str) {
         "retired" => fetch_api("https://www.hackthebox.com/api/v4/machine/list/retired", &appkey),
         _ => {
             eprintln!("\x1B[31mInvalid machine type: {}\x1B[0m", machine_type);
-            return;
+            return machine_list;
         }
     };
 
@@ -96,7 +83,7 @@ pub fn list_machines(machine_type: &str) {
             for (sequence, entry) in json_data["info"].as_array().unwrap().iter().enumerate() {
                 let index = sequence;
 
-                let id = entry["id"].as_u64().unwrap(); //if a field represents a specific type (i.e., a number), serde_json will parse it as a number, not like a str s you need to use as_<type>
+                let id = entry["id"].as_u64().unwrap_or(0);
                 let name = entry["name"].as_str().unwrap_or("Name not available");
                 let points = entry["points"].as_u64().unwrap_or(0);
                 let difficulty_str = entry["difficultyText"].as_str().unwrap_or("Difficulty not available");
@@ -108,7 +95,15 @@ pub fn list_machines(machine_type: &str) {
                     array_index_free_machines.push(index);
                 }
 
-                let machine = Machine {id: id, name: name, points: points, difficulty_str: difficulty_str, user_pwn: user_pwn, root_pwn: root_pwn, free: free};
+                let machine = Machine {
+                    id,
+                    name: name.to_string(),
+                    points,
+                    difficulty_str: difficulty_str.to_string(),
+                    user_pwn: user_pwn.to_string(),
+                    root_pwn: root_pwn.to_string(),
+                    free,
+                };
 
                 machine_list.push(machine);
             }
@@ -131,9 +126,9 @@ pub fn list_machines(machine_type: &str) {
             } else {
                 eprintln!("\x1B[31mError. Maybe your API key is incorrect or expired. Renew your API key by running htb-update.\x1B[0m");
             }
-            return;
         }
     }
+    machine_list
 }
 
 fn display_table_sp(machine_list: &[SPMachine]) {

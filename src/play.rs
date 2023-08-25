@@ -78,7 +78,7 @@ pub fn submit_flag() {
 
     let flag_data = FlagData {
         flag: flag.trim().to_string(),
-        id: machine_info.id,
+        id: machine_info.machine.id,
         difficulty: machine_rating.trim().to_string(),
     };
 
@@ -120,8 +120,8 @@ pub fn submit_flag() {
         }
     }
 
-    if machine_info.user_pwn != "null" && machine_info.root_pwn != "null" && machine_info.review == true {
-        println!("{}Wonderful! You PWNED {}! Would you like to submit feedback?{}", BYELLOW, machine_info.name, RESET);
+    if machine_info.machine.user_pwn != "null" && machine_info.machine.root_pwn != "null" && machine_info.review == true {
+        println!("{}Wonderful! You PWNED {}! Would you like to submit feedback?{}", BYELLOW, machine_info.machine.name, RESET);
 
         loop {
             println!("Select an option:");
@@ -150,7 +150,7 @@ pub fn submit_flag() {
                     let review_stars = review_stars.trim().parse::<u32>().unwrap_or(0);
     
                     let review_data = ReviewData {
-                        id: machine_info.id,
+                        id: machine_info.machine.id,
                         stars: review_stars,
                         headline: review_headline.trim().to_string(),
                         review: review_machine.trim().to_string(),
