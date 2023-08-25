@@ -30,7 +30,7 @@ pub fn list_sp_machines(machine_type: &str) -> Vec<SPMachine> {
                     let id = entry["id"].as_u64().unwrap();
                     let name = entry["name"].as_str().unwrap_or("Name not available").to_string();
                     let os = entry["os"].as_str().unwrap_or("OS not available").to_string();
-                    let machine_name_os_icon = PlayingMachine::get_os_icon(name, &os);
+                    let machine_name_os_icon = PlayingMachine::get_os_icon(name, &os, "left");
                     let difficulty_str = entry["difficultyText"].as_str().unwrap_or("Difficulty not available").to_string();
 
                     let sp_machine = SPMachine { id, name: machine_name_os_icon, difficulty_str: difficulty_str, tier: tier_lvl };
@@ -88,7 +88,7 @@ pub fn list_machines(machine_type: &str) -> Vec<Machine> {
                 let id = entry["id"].as_u64().unwrap_or(0);
                 let name = entry["name"].as_str().unwrap_or("Name not available").to_string();
                 let os = entry["os"].as_str().unwrap_or("OS not available").to_string();
-                let machine_name_os_icon = PlayingMachine::get_os_icon(name, &os);
+                let machine_name_os_icon = PlayingMachine::get_os_icon(name, &os, "left");
                 let points = entry["points"].as_u64().unwrap_or(0);
                 let difficulty_str = entry["difficultyText"].as_str().unwrap_or("Difficulty not available").to_string();
                 let user_pwn = entry["authUserInUserOwns"].as_str().unwrap_or("null").to_string();

@@ -157,15 +157,25 @@ impl PlayingMachine {
         }
     }
 
-    pub fn get_os_icon(name: String, os: &String) -> String {
+    pub fn get_os_icon(name: String, os: &String, pos: &str) -> String {
         let mut icon_str = String::new();
-
-        if os == "Linux" {
-            icon_str = format!(" {}", name);
-        } else if os == "Windows" {
-            icon_str = format!("󰖳 {}", name);
+        
+        if pos == "right" {
+            if os == "Linux" {
+                icon_str = format!("{} ", name);
+            } else if os == "Windows" {
+                icon_str = format!("{} ", name);
+            } else {
+                icon_str = name;
+            }
         } else {
-            icon_str = name;
+            if os == "Linux" {
+                icon_str = format!(" {}", name);
+            } else if os == "Windows" {
+                icon_str = format!("󰖳 {}", name);
+            } else {
+                icon_str = name;
+            }
         }
         icon_str
     }
@@ -203,7 +213,7 @@ impl PlayingMachine {
                                         .as_str()
                                         .unwrap_or("null")
                                         .to_string();
-                            let machine_name_os_icon = Self::get_os_icon(name, &os);
+                            let machine_name_os_icon = Self::get_os_icon(name, &os, "right");
                         
                             return PlayingMachine {
                                 machine: Machine {
@@ -245,7 +255,7 @@ impl PlayingMachine {
                             .as_str()
                             .unwrap_or("null")
                             .to_string();
-                let machine_name_os_icon = Self::get_os_icon(name, &os);
+                let machine_name_os_icon = Self::get_os_icon(name, &os, "right");
 
                 PlayingMachine {
                     machine: Machine {
