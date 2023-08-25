@@ -157,6 +157,19 @@ impl PlayingMachine {
         }
     }
 
+    pub fn get_os_icon(name: String, os: &String) -> String {
+        let mut icon_str = String::new();
+
+        if os == "Linux" {
+            icon_str = format!(" {}", name);
+        } else if os == "Windows" {
+            icon_str = format!("󰖳 {}", name);
+        } else {
+            icon_str = name;
+        }
+        icon_str
+    }
+
     pub fn get_machine(machine_name: &str, appkey: &str) -> Self {
 
         let base_api: &str = "https://www.hackthebox.com/api/v4/machine/profile/";
@@ -182,14 +195,20 @@ impl PlayingMachine {
                         if let Ok(sub_json_data) = sub_result {
                             let machine_ip = get_machine_ip(&sub_json_data, &appkey);
                             let sub_entry = &sub_json_data["info"];
+                            let name = sub_entry["name"]
+                                        .as_str()
+                                        .unwrap_or("Name not available")
+                                        .to_string();
+                            let os = sub_entry["os"]
+                                        .as_str()
+                                        .unwrap_or("null")
+                                        .to_string();
+                            let machine_name_os_icon = Self::get_os_icon(name, &os);
                         
                             return PlayingMachine {
                                 machine: Machine {
                                     id: sub_entry["id"].as_u64().unwrap(),
-                                    name: sub_entry["name"]
-                                        .as_str()
-                                        .unwrap_or("Name not available")
-                                        .to_string(),
+                                    name: machine_name_os_icon,
                                     points: 0,
                                     difficulty_str: sub_entry["difficultyText"]
                                         .as_str()
@@ -205,7 +224,7 @@ impl PlayingMachine {
                                         .to_string(),
                                     free: true,
                                 },
-                                os: sub_entry["os"].as_str().unwrap_or("null").to_string(),
+                                os: os,
                                 ip: machine_ip,
                                 review: false,
                                 avatar: sub_entry["avatar"].as_str().unwrap_or("null").to_string(),
@@ -244,6 +263,15 @@ impl PlayingMachine {
                 process::exit(1); // Exit with a non-zero status code
             }
         }
+    }
+
+    pub fn print_machine(m: PlayingMachine) {
+        println!("Name: {}", m.machine.name);
+        println!("IP Address: {}", m.ip);
+        println!("Points: {}", m.machine.points);
+        println!("Difficulty: {}", m.machine.difficulty_str);
+        println!("User Pwned: {}", m.machine.user_pwn);
+        println!("Root Pwned: {}", m.machine.root_pwn);
     }
 }
 

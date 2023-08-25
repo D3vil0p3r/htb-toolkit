@@ -28,10 +28,12 @@ pub fn list_sp_machines(machine_type: &str) -> Vec<SPMachine> {
 
                 for entry in json_data["data"]["machines"].as_array().unwrap().iter() {
                     let id = entry["id"].as_u64().unwrap();
-                    let name = entry["name"].as_str().unwrap_or("Name not available");
-                    let difficulty_str = entry["difficultyText"].as_str().unwrap_or("Difficulty not available");
+                    let name = entry["name"].as_str().unwrap_or("Name not available").to_string();
+                    let os = entry["os"].as_str().unwrap_or("OS not available").to_string();
+                    let machine_name_os_icon = PlayingMachine::get_os_icon(name, &os);
+                    let difficulty_str = entry["difficultyText"].as_str().unwrap_or("Difficulty not available").to_string();
 
-                    let sp_machine = SPMachine { id, name: name.to_string(), difficulty_str: difficulty_str.to_string(), tier: tier_lvl };
+                    let sp_machine = SPMachine { id, name: machine_name_os_icon, difficulty_str: difficulty_str, tier: tier_lvl };
 
                     sp_machine_list.push(sp_machine);
                 }
@@ -84,11 +86,13 @@ pub fn list_machines(machine_type: &str) -> Vec<Machine> {
                 let index = sequence;
 
                 let id = entry["id"].as_u64().unwrap_or(0);
-                let name = entry["name"].as_str().unwrap_or("Name not available");
+                let name = entry["name"].as_str().unwrap_or("Name not available").to_string();
+                let os = entry["os"].as_str().unwrap_or("OS not available").to_string();
+                let machine_name_os_icon = PlayingMachine::get_os_icon(name, &os);
                 let points = entry["points"].as_u64().unwrap_or(0);
-                let difficulty_str = entry["difficultyText"].as_str().unwrap_or("Difficulty not available");
-                let user_pwn = entry["authUserInUserOwns"].as_str().unwrap_or("null");
-                let root_pwn = entry["authUserInRootOwns"].as_str().unwrap_or("null");
+                let difficulty_str = entry["difficultyText"].as_str().unwrap_or("Difficulty not available").to_string();
+                let user_pwn = entry["authUserInUserOwns"].as_str().unwrap_or("null").to_string();
+                let root_pwn = entry["authUserInRootOwns"].as_str().unwrap_or("null").to_string();
                 let free = entry["free"].as_bool().unwrap_or(false);
 
                 if free && machine_type == "retired" {
@@ -97,11 +101,11 @@ pub fn list_machines(machine_type: &str) -> Vec<Machine> {
 
                 let machine = Machine {
                     id,
-                    name: name.to_string(),
+                    name: machine_name_os_icon,
                     points,
-                    difficulty_str: difficulty_str.to_string(),
-                    user_pwn: user_pwn.to_string(),
-                    root_pwn: root_pwn.to_string(),
+                    difficulty_str: difficulty_str,
+                    user_pwn: user_pwn,
+                    root_pwn: root_pwn,
                     free,
                 };
 

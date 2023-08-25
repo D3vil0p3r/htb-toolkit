@@ -14,8 +14,9 @@ pub fn get_active_machine_info() {
     let appkey = get_appkey();
 
     let active_machine = ActiveMachine::get_active(&appkey);
+    let machine_info = PlayingMachine::get_machine(&active_machine.name, &appkey);
 
-    ActiveMachine::print_active(&active_machine);
+    PlayingMachine::print_machine(machine_info);
 }
 
 pub fn reset_machine() {
