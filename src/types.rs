@@ -41,7 +41,7 @@ pub fn get_machine_ip(json_data: &serde_json::Value, appkey: &str) -> String {
                         if err.is_timeout() {
                             eprintln!("Encountered timeout");
                         } else {
-                            eprintln!("\x1B[31mError. Maybe your API key is incorrect or expired. Renew your API key by running htb-update.\x1B[0m");
+                            eprintln!("\x1B[31mError. Maybe your API key is incorrect or expired. Renew your API key by running htb-toolkit -k reset.\x1B[0m");
                         }
                         process::exit(1); // Exit with a non-zero status code
                     }
@@ -94,7 +94,7 @@ impl ActiveMachine {
                 if err.is_timeout() {
                     eprintln!("Encountered timeout");
                 } else {
-                    eprintln!("\x1B[31mError. Maybe your API key is incorrect or expired. Renew your API key by running htb-update.\x1B[0m");
+                    eprintln!("\x1B[31mError. Maybe your API key is incorrect or expired. Renew your API key by running htb-toolkit -k reset.\x1B[0m");
                 }
                 process::exit(1); // Exit with a non-zero status code
             }
@@ -109,11 +109,28 @@ impl ActiveMachine {
     }
 }
 
+pub trait CommonTrait {
+    fn get_name(&self) -> &str;
+    fn get_avatar(&self) -> &str;
+}
+
+#[derive(Clone)]
 pub struct SPMachine {
     pub id: u64,
     pub name: String,
     pub difficulty_str: String,
     pub tier: u64,
+    pub avatar: String,
+}
+
+impl CommonTrait for SPMachine {
+    fn get_name(&self) -> &str {
+        &self.name
+    }
+
+    fn get_avatar(&self) -> &str {
+        &self.avatar
+    }
 }
 
 #[derive(Clone)]
@@ -125,6 +142,17 @@ pub struct Machine {
     pub user_pwn: String,
     pub root_pwn: String,
     pub free: bool,
+    pub avatar: String,
+}
+
+impl CommonTrait for Machine {
+    fn get_name(&self) -> &str {
+        &self.name
+    }
+
+    fn get_avatar(&self) -> &str {
+        &self.avatar
+    }
 }
 
 pub struct PlayingMachine {
@@ -132,7 +160,6 @@ pub struct PlayingMachine {
     pub os: String,
     pub ip: String,
     pub review: bool,
-    pub avatar: String,
 }
 
 impl PlayingMachine {
@@ -145,6 +172,7 @@ impl PlayingMachine {
             user_pwn: String::new(),
             root_pwn: String::new(),
             free: false,
+            avatar: String::new(),
         };
 
     pub fn new() -> Self {
@@ -153,7 +181,6 @@ impl PlayingMachine {
             os: String::new(),
             ip: String::new(),
             review: false,
-            avatar: String::new(),
         }
     }
 
@@ -168,7 +195,7 @@ impl PlayingMachine {
             } else {
                 icon_str = name;
             }
-        } else {
+        } else if pos == "left" {
             if os == "Linux" {
                 icon_str = format!(" {}", name);
             } else if os == "Windows" {
@@ -176,6 +203,9 @@ impl PlayingMachine {
             } else {
                 icon_str = name;
             }
+        }
+        else {
+            icon_str = name;
         }
         icon_str
     }
@@ -233,11 +263,14 @@ impl PlayingMachine {
                                         .unwrap_or("null")
                                         .to_string(),
                                     free: true,
+                                    avatar: sub_entry["avatar"]
+                                        .as_str()
+                                        .unwrap_or("Avatar not available")
+                                        .to_string(),
                                 },
                                 os: os,
                                 ip: machine_ip,
                                 review: false,
-                                avatar: sub_entry["avatar"].as_str().unwrap_or("null").to_string(),
                             };
                         } else {
                             eprintln!("\x1B[31mError fetching Starting Point data.\x1B[0m");
@@ -266,18 +299,21 @@ impl PlayingMachine {
                         user_pwn: entry["authUserInUserOwns"].as_str().unwrap_or("null").to_string(),
                         root_pwn: entry["authUserInRootOwns"].as_str().unwrap_or("null").to_string(),
                         free: entry["free"].as_bool().unwrap_or(false),
+                        avatar: entry["avatar"]
+                            .as_str()
+                            .unwrap_or("Avatar not available")
+                            .to_string(),
                     },
                     os: os,
                     ip: entry["ip"].as_str().unwrap_or("null").to_string(),
                     review: entry["authUserHasReviewed"].as_bool().unwrap_or(false),
-                    avatar: entry["avatar"].as_str().unwrap_or("null").to_string(),
                 }         
             }
             Err(err) => {
                 if err.is_timeout() {
                     eprintln!("Encountered timeout");
                 } else {
-                    eprintln!("\x1B[31mError. Maybe your API key is incorrect or expired. Renew your API key by running htb-update.\x1B[0m");
+                    eprintln!("\x1B[31mError. Maybe your API key is incorrect or expired. Renew your API key by running htb-toolkit -k reset.\x1B[0m");
                 }
                 process::exit(1); // Exit with a non-zero status code
             }
@@ -336,7 +372,7 @@ impl PlayingUser {
                         if err.is_timeout() {
                             eprintln!("Encountered timeout");
                         } else {
-                            eprintln!("\x1B[31mError. Maybe your API key is incorrect or expired. Renew your API key by running htb-update.\x1B[0m");
+                            eprintln!("\x1B[31mError. Maybe your API key is incorrect or expired. Renew your API key by running htb-toolkit -k reset.\x1B[0m");
                         }
                         process::exit(1); // Exit with a non-zero status code
                     }
@@ -346,7 +382,7 @@ impl PlayingUser {
                 if err.is_timeout() {
                     eprintln!("Encountered timeout");
                 } else {
-                    eprintln!("\x1B[31mError. Maybe your API key is incorrect or expired. Renew your API key by running htb-update.\x1B[0m");
+                    eprintln!("\x1B[31mError. Maybe your API key is incorrect or expired. Renew your API key by running htb-toolkit -k reset.\x1B[0m");
                 }
                 process::exit(1); // Exit with a non-zero status code
             }

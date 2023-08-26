@@ -32,7 +32,7 @@ pub fn fetch_api(api_url: &str, appkey: &str) -> Result<serde_json::Value, reqwe
     let json_data = match serde_json::from_str(&response_text) {
         Ok(data) => data,
         Err(err) => {
-            eprintln!("Check if your API key is incorrect or expired. Renew your API key by running 'htb-toolkit -z reset'");
+            eprintln!("Check if your API key is incorrect or expired. Renew your API key by running 'htb-toolkit -k reset'");
             std::process::exit(1);
         }
     };

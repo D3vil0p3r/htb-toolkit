@@ -30,10 +30,12 @@ fn main() {
     let home = env::var("HOME").unwrap_or_default();
     let folder_path = format!("{}/.local/share/icons/hackthebox/avatar", home);
 
-    if let Err(err) = fs::create_dir_all(&folder_path) {
-        eprintln!("Error creating folder: {}", err);
-    } else {
-        println!("Folder created successfully.");
+    if !fs::metadata(&folder_path).is_ok() { // Create the folder only if it does not exist
+        if let Err(err) = fs::create_dir_all(&folder_path) {
+            eprintln!("Error creating folder: {}", err);
+        } else {
+            println!("Folder created successfully.");
+        }
     }
     
     // Create HTB config file if not existing
@@ -92,7 +94,7 @@ fn main() {
             } else if args[2] == "free" || args[2] == "retired" {
                 list_machines(&args[2]);
             } else if args[2] == "starting" {
-                list_sp_machines(&args[2]);
+                list_sp_machines();
             } 
         }
         "-p" => {

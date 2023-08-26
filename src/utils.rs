@@ -216,16 +216,14 @@ pub fn is_display_zero() -> bool {
     }
 }
 
-pub fn htb_machines_to_flypie(data: &serde_json::Value, param: &str) -> String {
+pub fn htb_machines_to_flypie<T: CommonTrait>(machine_list: Vec<T>) -> String {
     let terminal = "gnome-terminal --";
-    let fly_new = data[param]
-        .as_array()
-        .unwrap()
+    let fly_new = machine_list
         .iter()
         .map(|machine| {
-            let home = std::env::var("HOME").unwrap();
-            let machine_name = machine["name"].as_str().unwrap();
-            let machine_avatar = machine["avatar"].as_str().unwrap();
+            let home = env::var("HOME").unwrap();
+            let machine_name = &machine.get_name().splitn(2, ' ').nth(1).unwrap(); //Remove the "[os icon] " from the machine name
+            let machine_avatar = &machine.get_avatar();
 
             let avatar_url = format!("https://www.hackthebox.com{}", machine_avatar);
             let avatar_filename = format!(
@@ -233,10 +231,10 @@ pub fn htb_machines_to_flypie(data: &serde_json::Value, param: &str) -> String {
                 home, machine_name
             );
 
-            let shell = std::env::var("SHELL").unwrap();
+            let shell = env::var("SHELL").unwrap();
 
             let machine_command = format!(
-                "{} /usr/bin/bash -c \\\\\\\\\\\\\"htb-spawn {};'{}'\\\\\\\\\\\\\"",
+                "{} /usr/bin/bash -c 'htb-spawn {};'{}''",
                 terminal, machine_name, shell
             );
 
@@ -266,5 +264,5 @@ pub fn htb_machines_to_flypie(data: &serde_json::Value, param: &str) -> String {
         .collect::<Vec<_>>()
         .join("");
 
-    format!("[{}]", fly_new)
+    format!("[{}]", &fly_new[..fly_new.len() - 1]) // Return the dconf string with all free machines and delete the last character (, comma)
 }

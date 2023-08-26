@@ -3,11 +3,14 @@ use crate::appkey::set_appkey;
 use crate::appkey::reset_appkey;
 use crate::appkey::delete_appkey;
 use crate::colors::*;
+use crate::list::*;
 use crate::types::*;
 use crate::utils::*;
 use reqwest::blocking::{Client, Response};
 use std::env;
-use std::fs;
+use std::fs::{self,File};
+use std::io::{self,Read,Write};
+use std::process::Command;
 use regex::Regex;
 
 pub fn get_active_machine_info() {
@@ -96,58 +99,106 @@ pub fn prompt_setting(option: &str) {
     println!("Prompt setting updated to: {}", option);
 }
 
-pub fn update_machines() {
-    /*let appkey = get_appkey();
+pub fn update_machines() -> io::Result<()> {
+    let appkey = get_appkey();
 
     println!("Retrieving updated data from Hack The Box... Gimme some time hackerzzz...");
 
-    let machine_config = "machine_config.json";
-    let input_config = "input_config.dump";
-    let output_config = "output_config.dump";
+    let input_config = "input_config.txt";
+    let output_config = "output_config.txt";
 
-    let response = reqwest::blocking::get(&format!(
-        "https://www.hackthebox.com/api/v4/machine/list"
-    ))
-    .unwrap();
-    let machine_config_content = response.text().unwrap();
-    fs::write(machine_config, &machine_config_content)?;
+    let free_machine_list = list_machines("free");
 
-    let machine_config_content = fs::read_to_string(machine_config)?;
+    let fly_new = htb_machines_to_flypie(free_machine_list);
+    
+    let dump_command = format!("dconf dump /org/gnome/shell/extensions/flypie/ > {}", input_config);
+    let _ = Command::new("sh")
+        .arg("-c")
+        .arg(&dump_command)
+        .status()?;
 
-    let data: serde_json::Value = serde_json::from_str(&machine_config_content)?;
+    let mut fly_file = File::open(input_config)?;
+    let mut contents = String::new();
+    fly_file.read_to_string(&mut contents)?;
 
-    fs::remove_file(machine_config)?;
+    let fly_pattern = r#"(.*?)(\{\\"name\\":\\"Available Machines\\",\\"icon\\":\\"/usr/share/icons/htb-tools/htb-machines.png\\",\\"type\\":\\"CustomMenu\\",\\"children\\":)(.*?)(,\\"angle\\":-1,\\"data\\":\{\}\})(.*)"#;
+    let re = Regex::new(fly_pattern).unwrap();
 
-    let param = "info";
-    let fly_new = htb_machines_to_flypie(&data, param);
+    let modified_contents = re.replace(&contents, |caps: &regex::Captures| {
+        format!("{}{}{}{}{}", &caps[1], &caps[2], fly_new, &caps[4], &caps[5])
+    });
 
-    fs::write(input_config, &fs::read_to_string("/org/gnome/shell/extensions/flypie/")?)?;
+    let mut f = File::create(output_config)?;
+    f.write_all(modified_contents.as_bytes())?;
 
-    let mut input_config_content = String::new();
-    File::open(input_config)?.read_to_string(&mut input_config_content)?;
+    let load_command = format!("dconf load /org/gnome/shell/extensions/flypie/ < {}", output_config);
+    let _ = Command::new("sh")
+        .arg("-c")
+        .arg(&load_command)
+        .status()?;
+
+    // Starting Point Machines
+
+    let sp_machine_list = list_sp_machines();
+
+    let tiers = 3;
+    for index in 1..=tiers {
+        let tier_lvl = index - 1;
+
+        // Create a sublist of SPMachines with tier equal to 0
+        let tiered_list: Vec<SPMachine> = sp_machine_list
+            .iter()  // Use iter() instead of into_iter() to borrow instead of move
+            .filter(|machine| machine.tier == tier_lvl)
+            .cloned()  // Clone the filtered machines
+            .collect();
+
+        let fly_new = htb_machines_to_flypie(tiered_list);
+        
+        let dump_command = format!("dconf dump /org/gnome/shell/extensions/flypie/ > {}", input_config);
+        let _ = Command::new("sh")
+            .arg("-c")
+            .arg(&dump_command)
+            .status()?;
+
+        let mut fly_file = File::open(input_config)?;
+        let mut contents = String::new();
+        fly_file.read_to_string(&mut contents)?;
+
+        let fly_pattern = format!(
+            r#"(.*?)(\{{\\"name\\":\\"Tier {}\\",\\"icon\\":\\"/usr/share/icons/htb-tools/Tier-{}.svg\\",\\"type\\":\\"CustomMenu\\",\\"children\\":)(.*?)(,\\"angle\\":-1,\\"data\\":{})"#,
+            tier_lvl,
+            tier_lvl,
+            ""
+        );
+        let re = Regex::new(&fly_pattern).unwrap();
+
+        let modified_contents = re.replace_all(&contents, |caps: &regex::Captures| {
+            format!(
+                "{}{}{}{}",
+                &caps[1], &caps[2], fly_new, &caps[4]
+            )
+        });
+        let modified_contents_str = modified_contents.to_string();
+        
+        let mut f = File::create(output_config)?;
+        f.write_all(modified_contents_str.as_bytes())?;
+
+        let load_command = format!("dconf load /org/gnome/shell/extensions/flypie/ < {}", output_config);
+        let _ = Command::new("sh")
+            .arg("-c")
+            .arg(&load_command)
+            .status()?;
+    }
 
     fs::remove_file(input_config)?;
-
-    let fly_out = input_config_content.replace(
-        r#""name":"Available Machines","icon":"/usr/share/icons/htb-tools/htb-machines.png","type":"CustomMenu","children":"#,
-        &format!(
-            r#""name":"Available Machines","icon":"{}","type":"CustomMenu","children":"#,
-            fly_new
-        ),
-    );
-
-    fs::write(output_config, &fly_out)?;
-
-    fs::write("/org/gnome/shell/extensions/flypie/", &fs::read_to_string(output_config)?)?;
-
     fs::remove_file(output_config)?;
 
-    println!("Done. Press Enter to continue...");
+    println!("Machines updated. Press Enter to continue...");
     let mut input = String::new();
-    io::stdin().read_line(&mut input)?;
+    io::stdin().read_line(&mut input).expect("Failed to read line");
 
-    Ok(())*/
-}
+    Ok(())
+}   
 
 pub fn set_vpn() {
     println!("Setting a Hack The Box VPN...");

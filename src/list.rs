@@ -3,7 +3,7 @@ use crate::api::fetch_api;
 use crate::colors::*;
 use crate::types::*;
 
-pub fn list_sp_machines(machine_type: &str) -> Vec<SPMachine> {
+pub fn list_sp_machines() -> Vec<SPMachine> {
     let tiers = 3;
 
     println!("\x1B[93mConnecting to HTB server...\x1B[0m\n");
@@ -14,13 +14,7 @@ pub fn list_sp_machines(machine_type: &str) -> Vec<SPMachine> {
     for index in 1..=tiers {
         let mut sp_machine_list: Vec<SPMachine> = Vec::new();
         let tier_lvl = index - 1;
-        let result = match machine_type {
-            "starting" => fetch_api(&("https://www.hackthebox.com/api/v4/sp/tier/".to_owned() + index.to_string().as_str()), &appkey),
-            _ => {
-                eprintln!("\x1B[31mInvalid machine type: {}\x1B[0m", machine_type);
-                continue;
-            }
-        };
+        let result = fetch_api(&("https://www.hackthebox.com/api/v4/sp/tier/".to_owned() + index.to_string().as_str()), &appkey);
 
         match result {
             Ok(json_data) => {
@@ -32,8 +26,9 @@ pub fn list_sp_machines(machine_type: &str) -> Vec<SPMachine> {
                     let os = entry["os"].as_str().unwrap_or("OS not available").to_string();
                     let machine_name_os_icon = PlayingMachine::get_os_icon(name, &os, "left");
                     let difficulty_str = entry["difficultyText"].as_str().unwrap_or("Difficulty not available").to_string();
+                    let avatar_path = entry["avatar"].as_str().unwrap_or("Avatar not available").to_string();
 
-                    let sp_machine = SPMachine { id, name: machine_name_os_icon, difficulty_str: difficulty_str, tier: tier_lvl };
+                    let sp_machine = SPMachine { id, name: machine_name_os_icon, difficulty_str: difficulty_str, tier: tier_lvl, avatar: avatar_path };
 
                     sp_machine_list.push(sp_machine);
                 }
@@ -46,7 +41,7 @@ pub fn list_sp_machines(machine_type: &str) -> Vec<SPMachine> {
                 if err.is_timeout() {
                     eprintln!("Encountered timeout");
                 } else {
-                    eprintln!("\x1B[31mError. Maybe your API key is incorrect or expired. Renew your API key by running htb-update.\x1B[0m");
+                    eprintln!("\x1B[31mError. Maybe your API key is incorrect or expired. Renew your API key by running htb-toolkit -k reset.\x1B[0m");
                 }
             }
         }
@@ -94,6 +89,7 @@ pub fn list_machines(machine_type: &str) -> Vec<Machine> {
                 let user_pwn = entry["authUserInUserOwns"].as_str().unwrap_or("null").to_string();
                 let root_pwn = entry["authUserInRootOwns"].as_str().unwrap_or("null").to_string();
                 let free = entry["free"].as_bool().unwrap_or(false);
+                let avatar_path = entry["avatar"].as_str().unwrap_or("Avatar not available").to_string();
 
                 if free && machine_type == "retired" {
                     array_index_free_machines.push(index);
@@ -107,6 +103,7 @@ pub fn list_machines(machine_type: &str) -> Vec<Machine> {
                     user_pwn: user_pwn,
                     root_pwn: root_pwn,
                     free,
+                    avatar: avatar_path,
                 };
 
                 machine_list.push(machine);
@@ -128,7 +125,7 @@ pub fn list_machines(machine_type: &str) -> Vec<Machine> {
             if err.is_timeout() {
                 eprintln!("Encountered timeout");
             } else {
-                eprintln!("\x1B[31mError. Maybe your API key is incorrect or expired. Renew your API key by running htb-update.\x1B[0m");
+                eprintln!("\x1B[31mError. Maybe your API key is incorrect or expired. Renew your API key by running htb-toolkit -k reset.\x1B[0m");
             }
         }
     }
