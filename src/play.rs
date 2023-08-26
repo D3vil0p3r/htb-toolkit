@@ -3,6 +3,7 @@ use crate::colors::*;
 use crate::types::*;
 use crate::utils::change_shell;
 use crate::utils::display_target_info;
+use crate::vpn::*;
 use std::io;
 use std::io::Write;
 use reqwest::blocking::Client;
@@ -27,7 +28,19 @@ pub fn play_machine(machine_name: &str) {
     let appkey = get_appkey();
 
     let mut machine_info = PlayingMachine::get_machine(machine_name, &appkey);
-    let mut user_info = PlayingUser::get_user(&appkey);
+    let mut vpn = String::new();
+    
+    print_vpn_sp_list();
+    print_vpn_machine_list();
+    println!("Please, provide one VPN server you prefer to connect:");
+    io::stdout().flush().expect("Flush failed!");
+    io::stdin()
+        .read_line(&mut vpn)
+        .expect("Failed to read line");
+
+    run_vpn(vpn.trim());
+
+    let mut user_info = PlayingUser::get_user(&appkey); // Before this it is needed to run HTB VPN to take the Attacker IP address
 
     display_target_info(&machine_info, &user_info);
     //change_shell(&mut machine_info, &mut user_info);

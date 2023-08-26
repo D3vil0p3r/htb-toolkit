@@ -198,11 +198,6 @@ pub fn update_machines() -> io::Result<()> {
     io::stdin().read_line(&mut input).expect("Failed to read line");
 
     Ok(())
-}   
-
-pub fn set_vpn() {
-    println!("Setting a Hack The Box VPN...");
-    // Your implementation here
 }
 
 pub fn manage_app_key(option: &str) {

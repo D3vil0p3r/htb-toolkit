@@ -3,6 +3,7 @@ use std::io::{self, Write};
 use std::env;
 use crate::colors::*;
 use crate::types::*;
+use crate::vpn::*;
 use pnet::datalink;
 use std::fs::{self, File};
 use std::net::IpAddr;
@@ -192,12 +193,17 @@ pub fn get_help() {
     println!("-u                            Update free machines in the Red Team menu.");
     println!("-v                            Set a Hack The Box VPN.");
     println!();
+    println!("Available VPN Servers:");
+    print_vpn_sp_list();
+    print_vpn_machine_list();
+    println!();
     println!("Usage Examples:");
     println!("{} ", env::args().nth(0).unwrap());
     println!("{} -k set", env::args().nth(0).unwrap());
     println!("{} -l free", env::args().nth(0).unwrap());
     println!("{} -m RouterSpace", env::args().nth(0).unwrap());
     println!("{} -u", env::args().nth(0).unwrap());
+    println!("{} -v EUFree1", env::args().nth(0).unwrap());
 }
 
 pub fn is_wsl() -> bool {

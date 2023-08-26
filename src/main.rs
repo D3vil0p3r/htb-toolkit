@@ -7,11 +7,13 @@ mod manage;
 mod play;
 mod types;
 mod utils;
+mod vpn;
 use std::env;
 use crate::list::*;
 use crate::manage::*;
 use crate::play::*;
 use crate::utils::*;
+use crate::vpn::*;
 use std::fs;
 use std::path::Path;
 use std::process::Command;
@@ -114,7 +116,11 @@ fn main() {
             update_machines();
         }
         "-v" => {
-            set_vpn();
+            if args.len() < 3 {
+                println!("Usage: {} -v <vpn-name>", args[0]);
+            } else {
+                run_vpn(&args[2].trim());
+            }
         }
         _ => {
             match print_banner() {
