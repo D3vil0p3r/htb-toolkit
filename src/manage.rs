@@ -17,7 +17,10 @@ pub fn get_active_machine_info() {
     let appkey = get_appkey();
 
     let active_machine = ActiveMachine::get_active(&appkey);
-    let machine_info = PlayingMachine::get_machine(&active_machine.name, &appkey);
+    let mut machine_info = PlayingMachine::get_machine(&active_machine.name, &appkey);
+    if machine_info.sp_flag == true {
+        machine_info.ip = get_ip(&appkey);
+    }
 
     PlayingMachine::print_machine(machine_info);
 }
@@ -41,7 +44,7 @@ pub fn reset_machine() {
 
     let active_machine = ActiveMachine::get_active(&appkey);
     let mut machine_info = PlayingMachine::get_machine(active_machine.name.as_str(), &appkey);
-    let mut user_info = PlayingUser::get_user(&appkey);
+    let mut user_info = PlayingUser::get_playinguser(&appkey);
 
     change_shell(&mut machine_info, &mut user_info);
 }
@@ -52,10 +55,10 @@ pub fn stop_machine() {
     let appkey = get_appkey();
     let active_machine = ActiveMachine::get_active(&appkey);
     let client = Client::new();
-    let account = PlayingUser::get_user(&appkey);
+    let account = User::get_user(&appkey);
     let machine_type = active_machine.mtype;
 
-    let mut post_req = String::new();
+    let post_req:  String;
 
     if machine_type.contains("Starting Point") || account.vpnname.contains("VIP") { //If you are using a VIP VPN, the machine can be stopped only by api/v4/vm/terminate API (even if the machine is free)
         post_req = String::from("https://www.hackthebox.com/api/v4/vm/terminate");
@@ -65,16 +68,15 @@ pub fn stop_machine() {
     }
     let stop_data = serde_json::json!({"machine_id": active_machine.id});
     let stop_response: Response = client
-        .post(post_req.as_str())
+        .post(&post_req)
         .header("Authorization", format!("Bearer {}", appkey))
         .json(&stop_data)
         .send()
         .expect("Error on POST request.");
+    
     let stop_message = stop_response.json::<serde_json::Value>().expect("Failed to parse JSON response.");
     let stop_message = stop_message.get("message").unwrap_or(&serde_json::Value::Null).as_str().unwrap();
     println!("{}{}{}", BGREEN, stop_message, RESET);
-    
-    println!("{}", stop_message);
 
     if htbconfig.promptchange == true { //If the prompt is set to change during the playing, when you stop the machine, it should restore the original shell
         restore_shell();
@@ -85,7 +87,7 @@ pub fn prompt_setting(option: &str) {
     let home = env::var("HOME").unwrap_or_default();
     let htb_config = format!("{}/.htb.conf", home);
 
-    let mut content = fs::read_to_string(&htb_config)
+    let content = fs::read_to_string(&htb_config)
         .expect("Failed to read HTB config file");
 
     let re = Regex::new(r"prompt_change=\w+")
@@ -100,7 +102,6 @@ pub fn prompt_setting(option: &str) {
 }
 
 pub fn update_machines() -> io::Result<()> {
-    let appkey = get_appkey();
 
     println!("Retrieving updated data from Hack The Box... Gimme some time hackerzzz...");
 

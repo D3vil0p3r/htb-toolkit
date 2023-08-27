@@ -8,12 +8,14 @@ pub fn fetch_api(api_url: &str, appkey: &str) -> Result<serde_json::Value, reqwe
         .timeout(Duration::from_secs(120))
         .build()?;
 
+    //let client = Client::new();
+
     let response = client.get(api_url)
         .header("Authorization", format!("Bearer {}", appkey))
         .header("content-type", "application/json" )
         .send()?;
 
-    let status_code  = response.status().as_u16();;
+    let status_code  = response.status().as_u16();
     let response_text = response.text()?;
 
     /*println!("Call: {}", api_url); // DEBUG
@@ -25,14 +27,14 @@ pub fn fetch_api(api_url: &str, appkey: &str) -> Result<serde_json::Value, reqwe
         std::process::exit(1);
     } else if status_code >= 500 && status_code < 600 {
         // Handle 5xx Server Errors
-        eprintln!("HTTP 500: Server error. Please try again later.");
+        eprintln!("HTTP {}: Server error. Please try again later.", status_code);
         std::process::exit(1);
     }
 
     let json_data = match serde_json::from_str(&response_text) {
         Ok(data) => data,
         Err(err) => {
-            eprintln!("Check if your API key is incorrect or expired. Renew your API key by running 'htb-toolkit -k reset'");
+            eprintln!("Check if your API key is incorrect or expired. Renew your API key by running 'htb-toolkit -k reset'. Error details: {}", err);
             std::process::exit(1);
         }
     };

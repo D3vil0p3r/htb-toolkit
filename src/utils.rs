@@ -20,7 +20,7 @@ pub fn change_shell(machine_info: &mut PlayingMachine, user_info: &mut PlayingUs
             "PS1=\"\\e[32m\\]┌──[Target:{}🚀🌐IP:{}🔥\\e[34m\\]Attacker:{}📡IP:{}\\e[32m\\]🏅Prize:{} points]\\\n└──╼[👾]\\\\[\\e[36m\\]\\$(pwd) $ \\[\\e[0m\\]\"",
             machine_info.machine.name,
             machine_info.ip,
-            user_info.name,
+            user_info.user.name,
             get_interface_ip("tun0").expect("Error on getting tun0 IP address").to_string(),
             machine_info.machine.points
         );
@@ -49,7 +49,7 @@ pub fn change_shell(machine_info: &mut PlayingMachine, user_info: &mut PlayingUs
 end"#,
             machine_info.machine.name,
             machine_info.ip,
-            user_info.name,
+            user_info.user.name,
             get_interface_ip("tun0").expect("Error on getting tun0 IP address").to_string(),
             machine_info.machine.points
         );
@@ -64,7 +64,7 @@ end"#,
             "PROMPT=\"%F{{46}}┌──[Target:{}🚀🌐IP:{}🔥%F{{201}}Attacker:{}📡IP:{}%F{{46}}Prize:{} points]\"$'\\n'\"└──╼[👾]%F{{44}}%~ $%f \"" ,
             machine_info.machine.name,
             machine_info.ip,
-            user_info.name,
+            user_info.user.name,
             get_interface_ip("tun0").expect("Error on getting tun0 IP address").to_string(),
             machine_info.machine.points
         );
@@ -78,18 +78,18 @@ end"#,
 pub fn restore_shell() {
     let result = env::var("SHELL").unwrap_or_default();
 
-    if result == "bash" {
+    if result.contains("bash") {
         let file = format!("{}/.bashrc.htb.bak", env::var("HOME").unwrap());
         if fs::metadata(&file).is_ok() {
             fs::copy(&file, format!("{}/.bashrc", env::var("HOME").unwrap())).expect("Failed to copy file");
             // Reload the .bashrc file if needed (e.g., using a shell-specific command)
         }
-    } else if result == "fish" {
+    } else if result.contains("fish") {
         let file = format!("{}/.config/fish/functions/fish_prompt.fish.htb.bak", env::var("HOME").unwrap());
         if fs::metadata(&file).is_ok() {
             fs::rename(&file, format!("{}/.config/fish/functions/fish_prompt.fish", env::var("HOME").unwrap())).expect("Failed to rename file");
         }
-    } else if result == "zsh" {
+    } else if result.contains("zsh") {
         let file = format!("{}/.zshrc.htb.bak", env::var("HOME").unwrap());
         if fs::metadata(&file).is_ok() {
             fs::copy(&file, format!("{}/.zshrc", env::var("HOME").unwrap())).expect("Failed to copy file");
@@ -109,7 +109,7 @@ pub fn display_target_info(machine_info: &PlayingMachine, user_info: &PlayingUse
     println!("{}| User Flag         : {}{}{}", BGREEN, BCYAN, machine_info.machine.user_pwn, RESET);
     println!("{}| Root Flag         : {}{}{}", BGREEN, BCYAN, machine_info.machine.root_pwn, RESET);
     println!("{}|────────────────────────────────────────────────────|{}", BGREEN, RESET);
-    println!("{}| Attacker          : {}{}{}", BGREEN, RED, user_info.name, RESET);
+    println!("{}| Attacker          : {}{}{}", BGREEN, RED, user_info.user.name, RESET);
     println!("{}| Attacker IP       : {}{}{}", BGREEN, RED, user_info.ip, RESET);
     println!("{}└────────────────────────────────────────────────────┘{}", BGREEN, RESET);
     println!();
@@ -191,7 +191,7 @@ pub fn get_help() {
     println!("-r                            Reset the playing machine.");
     println!("-s                            Stop the playing machine.");
     println!("-u                            Update free machines in the Red Team menu.");
-    println!("-v                            Set a Hack The Box VPN.");
+    println!("-v                            Check and set a Hack The Box VPN.");
     println!();
     println!("Available VPN Servers:");
     print_vpn_sp_list();
@@ -203,12 +203,28 @@ pub fn get_help() {
     println!("{} -l free", env::args().nth(0).unwrap());
     println!("{} -m RouterSpace", env::args().nth(0).unwrap());
     println!("{} -u", env::args().nth(0).unwrap());
-    println!("{} -v EUFree1", env::args().nth(0).unwrap());
+    println!("{} -v", env::args().nth(0).unwrap());
+}
+
+pub fn is_inside_container() -> bool {
+    if let Ok(cgroup) = fs::read_to_string("/proc/1/cgroup") {
+        cgroup.contains("/docker/") || cgroup.contains("/podman/")
+    } else {
+        false
+    }
 }
 
 pub fn is_wsl() -> bool {
     if let Ok(uname) = fs::read_to_string("/proc/sys/kernel/osrelease") {
         uname.contains("Microsoft") || uname.contains("WSL")
+    } else {
+        false
+    }
+}
+
+pub fn is_display_empty() -> bool {
+    if let Ok(display_value) = env::var("DISPLAY") {
+        display_value.is_empty()
     } else {
         false
     }

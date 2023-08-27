@@ -1,7 +1,9 @@
+use crate::api::fetch_api;
 use crate::appkey::get_appkey;
 use crate::colors::*;
+use crate::utils::*;
 use std::collections::HashMap;
-use std::fs::{self, File};
+use std::fs;
 use std::io::{self, Write};
 use std::process::Command;
 use std::thread;
@@ -29,12 +31,96 @@ pub fn print_vpn_machine_list() {
     println!("{}└────────────────────────────────────────────────────┘{}", RED, RESET);
 }
 
-pub fn run_vpn(chosen_server: &str) {
+fn vpn_type() -> Option<Vec<String>> {
+    let appkey = get_appkey();
+    let result = fetch_api("https://www.hackthebox.com/api/v4/connection/status", &appkey);
+    let mut vpntype: Vec<String> = Vec::new();
+
+    match result {
+        Ok(json_value) => {
+            if let Some(json_vpn) = json_value.as_array() {
+                for item in json_vpn {
+                    if let Some(vpntype_value) = item["type"].as_str() {
+                        vpntype.push(vpntype_value.to_string());
+                    }
+                }
+            } else {
+                println!("Expected JSON array");
+            }
+        }
+        Err(err) => {
+            if err.is_timeout() {
+                eprintln!("Encountered timeout");
+            } else {
+                eprintln!(
+                    "\x1B[31mError. Maybe your API key is incorrect or expired. Renew your API key by running htb-toolkit -k reset.\x1B[0m"
+                );
+            }
+        }
+    }
+
+    // If HTB VPN is active and tun0 is also active on your client...
+    if get_interface_ip("tun0").is_some() {
+        Some(vpntype)
+    } else {
+        None
+    }
+}
+
+pub fn check_vpn() {
+    let mut vpn = String::new();
+    if let Some(vpntypes) = vpn_type() {
+        let vpntypes_str = vpntypes.join(", "); // Join the VPN types with a comma and space. Note that if we switch two different VPNs, they can still leave together for some time
+        let mut yn = String::new();
+        if vpntypes.len() > 1 {
+            println!(
+                "\nThe following VPN types are already running: {}. You have multiple VPNs running. The oldest one will go down automatically in some minutes.",
+                vpntypes_str
+            );
+        } else {
+            println!(
+                "\nThe following VPN type is already running: {}.",
+                vpntypes_str
+            );
+        }
+
+        println!("Do you want to terminate the listed VPN and choose a new one (y/n)?");
+        io::stdout().flush().unwrap();
+        io::stdin().read_line(&mut yn).expect("Failed to read input");
+        loop {
+            match yn.trim() {
+                "y" | "Y" => {
+                    print_vpn_sp_list();
+                    print_vpn_machine_list();
+                    println!("Please, provide one VPN server you prefer to connect:");
+                    io::stdout().flush().expect("Flush failed!");
+                    io::stdin()
+                        .read_line(&mut vpn)
+                        .expect("Failed to read line");
+                    run_vpn(&vpn);
+                    break;
+                }
+                "n" | "N" => break,
+                _ => println!("Invalid answer."),
+            }
+        }
+    }
+    else {
+        print_vpn_sp_list();
+        print_vpn_machine_list();
+        println!("Please, provide one VPN server you prefer to connect:");
+        io::stdout().flush().expect("Flush failed!");
+        io::stdin()
+            .read_line(&mut vpn)
+            .expect("Failed to read line");
+        run_vpn(&vpn);
+    }
+}
+
+fn run_vpn(chosen_server: &str) {
+
     let appkey = get_appkey();
     
-    let array_of_conn = vec!["UDP", "TCP"];
-    let mut udp = 0;
-    let mut tcp = 0;
     let mut vpn_tcp = String::from("/1");
 
     let mut vpn_servers = HashMap::new();
@@ -136,40 +222,36 @@ pub fn run_vpn(chosen_server: &str) {
     let vpn_id = vpn_servers[&key];
 
     loop {
-        println!("\x1b[32mWould you like to connect to Hack The Box VPN by UDP or TCP?\x1b[0m");
+        println!("\n{}Would you like to connect to Hack The Box VPN by UDP or TCP? [UDP]{}", BGREEN, RESET);
         let mut input = String::new();
         io::stdin().read_line(&mut input).expect("Failed to read line");
+        input = input.trim().to_string(); //remove \n from Enter keyboard button
+
+        if input.is_empty() {
+            input = "udp".to_string();
+        }
 
         match input.trim().to_lowercase().as_str() {
             "udp" => {
-                udp = 1;
-                tcp = 0;
                 break;
             }
             "tcp" => {
-                tcp = 1;
-                udp = 0;
                 vpn_tcp = String::from("/0");
                 break;
             }
             _ => {
-                println!("\x1b[32mPlease select UDP or TCP:\x1b[0m");
+                println!("{}Please select UDP or TCP:{}", BGREEN, RESET);
             }
         }
     }
 
-    println!("Connecting to {} server [id={}]", key, vpn_id);
+    println!("\nConnecting to {} server [id={}]\n", key, vpn_id);
 
     let _output = Command::new("sudo")
         .arg("killall")
         .arg("openvpn")
         .output()
         .expect("Failed to execute command");
-
-    // Call htb-stop (substitute with actual command)
-    let _htb_stop_output = Command::new("htb-stop")
-        .output()
-        .expect("Failed to execute htb-stop command");
 
     let switch_url = format!("https://www.hackthebox.com/api/v4/connections/servers/switch/{}", vpn_id);
     let client = reqwest::blocking::Client::new();

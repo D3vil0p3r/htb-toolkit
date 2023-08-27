@@ -87,7 +87,7 @@ fn main() {
             if args.len() < 3 {
                 println!("Usage: {} -m <machine-name>", args[0]);
             } else {
-                play_machine(&args[2]);
+                let _ = play_machine(&args[2]);
             }
         }
         "-l" => {
@@ -113,13 +113,13 @@ fn main() {
             stop_machine();
         }
         "-u" => {
-            update_machines();
+            let _ = update_machines();
         }
         "-v" => {
             if args.len() < 3 {
-                println!("Usage: {} -v <vpn-name>", args[0]);
+                println!("Usage: {} -v", args[0]);
             } else {
-                run_vpn(&args[2].trim());
+                check_vpn();
             }
         }
         _ => {

@@ -1,7 +1,6 @@
-use crate::api::fetch_api;
-use std::env;
+use crate::utils::*;
 use std::fs;
-use std::io::{self, Read, ErrorKind};
+use std::io::{self, Read};
 use std::process::{Command, Stdio};
 
 fn read_file_contents(path: &str) -> Result<String, io::Error> {
@@ -40,7 +39,6 @@ pub fn get_appkey() -> String {
         match output {
             Ok(output) => {
                 if output.status.success() {
-                    let appkey = String::from_utf8_lossy(&output.stdout).to_string();
                     String::from_utf8_lossy(&output.stdout).to_string()
                 } else {
                     let error_output = String::from_utf8_lossy(&output.stderr);
@@ -121,21 +119,5 @@ pub fn delete_appkey() {
         }
     } else {
         println!("Hack The Box App Token does not exist. Cannot delete.");
-    }
-}
-
-fn is_inside_container() -> bool {
-    if let Ok(cgroup) = fs::read_to_string("/proc/1/cgroup") {
-        cgroup.contains("/docker/") || cgroup.contains("/podman/")
-    } else {
-        false
-    }
-}
-
-fn is_display_empty() -> bool {
-    if let Ok(display_value) = env::var("DISPLAY") {
-        display_value.is_empty()
-    } else {
-        false
     }
 }

@@ -66,7 +66,7 @@ pub fn list_machines(machine_type: &str) -> Vec<Machine> {
             return machine_list;
         }
     };
-
+    
     match result {
         Ok(json_data) => {
             println!("\x1B[92mDone.\x1B[0m\n");
@@ -86,8 +86,8 @@ pub fn list_machines(machine_type: &str) -> Vec<Machine> {
                 let machine_name_os_icon = PlayingMachine::get_os_icon(name, &os, "left");
                 let points = entry["points"].as_u64().unwrap_or(0);
                 let difficulty_str = entry["difficultyText"].as_str().unwrap_or("Difficulty not available").to_string();
-                let user_pwn = entry["authUserInUserOwns"].as_str().unwrap_or("null").to_string();
-                let root_pwn = entry["authUserInRootOwns"].as_str().unwrap_or("null").to_string();
+                let user_pwn = entry["authUserInUserOwns"].to_string();
+                let root_pwn = entry["authUserInRootOwns"].to_string();
                 let free = entry["free"].as_bool().unwrap_or(false);
                 let avatar_path = entry["avatar"].as_str().unwrap_or("Avatar not available").to_string();
 
@@ -157,33 +157,15 @@ fn display_table(machine_list: &[Machine]) {
     println!("-------------------------------------------------------------");
 
     for machine in machine_list {
-        let user_pwn_colored = if machine.user_pwn != "null" {
-            format!("\x1B[93m{}\x1B[0m", machine.user_pwn)
-        } else {
-            machine.user_pwn.to_string()
-        };
-
-        let root_pwn_colored = if machine.root_pwn != "null" {
-            format!("\x1B[91m{}\x1B[0m", machine.root_pwn)
-        } else {
-            machine.root_pwn.to_string()
-        };
-
-        let free_colored = if machine.free {
-            format!("\x1B[92m{}\x1B[0m", machine.free)
-        } else {
-            machine.free.to_string()
-        };
-
         println!(
             "{}{:<8}{} {}{:<20}{} {}{:<8}{} {}{:<15}{} {}{:<10}{} {}{:<10}{} {}{:<8}{}",
             BBLUE, machine.id, RESET,
             BGREEN, machine.name, RESET,
             BYELLOW, machine.points, RESET,
             BCYAN, machine.difficulty_str, RESET,
-            BYELLOW, user_pwn_colored, RESET,
-            RED, root_pwn_colored, RESET,
-            BGREEN, free_colored, RESET,
+            BYELLOW, machine.user_pwn, RESET,
+            RED, machine.root_pwn, RESET,
+            BGREEN, machine.free, RESET,
         );
     }
 }
