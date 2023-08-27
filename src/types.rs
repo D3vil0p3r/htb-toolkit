@@ -212,7 +212,7 @@ impl PlayingMachine {
             if os == "Linux" {
                 icon_str = format!("{} ", name);
             } else if os == "Windows" {
-                icon_str = format!("{} ", name);
+                icon_str = format!("{} 󰖳", name);
             } else {
                 icon_str = name;
             }
