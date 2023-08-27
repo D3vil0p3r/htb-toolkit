@@ -290,12 +290,8 @@ impl PlayingMachine {
                                         .unwrap_or("Difficulty not available")
                                         .to_string(),
                                     user_pwn: sub_entry["userOwn"]
-                                        .as_str()
-                                        .unwrap_or("null")
                                         .to_string(),
                                     root_pwn: sub_entry["rootOwn"]
-                                        .as_str()
-                                        .unwrap_or("null")
                                         .to_string(),
                                     free: true,
                                     avatar: sub_entry["avatar"]

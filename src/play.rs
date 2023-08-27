@@ -87,6 +87,8 @@ pub fn play_machine(machine_name: &str) -> Result<(), Box<dyn std::error::Error>
     
     let mut user_info = PlayingUser::get_playinguser(&appkey); // Before this it is needed to run HTB VPN to take the Attacker IP address
 
+    let _ = print_banner();
+
     if machine_info.machine.user_pwn != "null" {
         println!("{}Hey! You have already found the User Flag! Nice one!{}", BGREEN, RESET);
     }
@@ -102,7 +104,7 @@ pub fn play_machine(machine_name: &str) -> Result<(), Box<dyn std::error::Error>
     // Writing /etc/hosts
     loop {
         let mut yn = String::new();
-        print!("\n{}Would you like to assign a domain name to the target machine IP address and store it in /etc/hosts? (y/n){}", BGREEN, RESET);
+        print!("\n{}Would you like to assign a domain name to the target machine IP address and store it in /etc/hosts (y/n)? {}", BGREEN, RESET);
         io::stdout().flush().unwrap();
         io::stdin().read_line(&mut yn).expect("Failed to read input");
 
