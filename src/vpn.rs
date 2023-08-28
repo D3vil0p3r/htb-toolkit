@@ -109,8 +109,11 @@ pub fn check_vpn(machine_spflag: bool) {
         }
     }
     else {
-        print_vpn_sp_list();
-        print_vpn_machine_list();
+        if machine_spflag {
+            print_vpn_sp_list();
+        } else {
+            print_vpn_machine_list();
+        }
         println!("Please, provide one VPN server you prefer to connect:");
         io::stdout().flush().expect("Flush failed!");
         io::stdin()

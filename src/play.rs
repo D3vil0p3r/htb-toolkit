@@ -35,7 +35,7 @@ pub fn play_machine(machine_name: &str) -> Result<(), Box<dyn std::error::Error>
 
     println!("Stopping any active machine...");
     stop_machine();
-
+    
     check_vpn(machine_info.sp_flag);    
 
     //For SP Machines and VIP VPN (not Free VPN)
