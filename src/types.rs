@@ -271,7 +271,7 @@ impl PlayingMachine {
                                         .unwrap_or("Name not available")
                                         .to_string();
 
-                            // For a Starting Point machine, unlike the usual machines, we can retrieve the IP address only after the machine is spawn, so here we assign an empty value. We assign its machine_ip in the play() function
+                            // For a Starting Point machine, unlike the usual machines, we can retrieve the IP address only after the machine is spawn, so here we assign an empty value. We assign its machine_ip in the play() function or reset() function
                             let machine_ip = String::new();
                             
                             let os = sub_entry["os"]

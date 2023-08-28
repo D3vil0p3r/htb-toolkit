@@ -51,7 +51,15 @@ pub fn reset_machine() {
 
     let active_machine = ActiveMachine::get_active(&appkey);
     let mut machine_info = PlayingMachine::get_machine(active_machine.name.as_str(), &appkey);
+    if machine_info.ip.is_empty() { //Starting Point case because SP IP address is assigned only after spawn of the machine
+        machine_info.ip = active_machine.ip;
+    }
     let mut user_info = PlayingUser::get_playinguser(&appkey);
+
+    // SP Machines change IP address when reset, so need to ask to write /etc/hosts
+    if machine_info.sp_flag {
+        let _ = add_hosts(&machine_info);
+    }
 
     change_shell(&mut machine_info, &mut user_info);
 }

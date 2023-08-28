@@ -288,3 +288,63 @@ pub fn htb_machines_to_flypie<T: CommonTrait>(machine_list: Vec<T>) -> String {
 
     format!("[{}]", &fly_new[..fly_new.len() - 1]) // Return the dconf string with all free machines and delete the last character (, comma)
 }
+
+pub fn add_hosts(machine_info: &PlayingMachine) -> Result<(), Box<dyn std::error::Error>> {
+    loop {
+        let mut yn = String::new();
+        print!("\n{}Would you like to assign a domain name to the target machine IP address and store it in /etc/hosts (y/n)? {}", BGREEN, RESET);
+        io::stdout().flush().unwrap();
+        io::stdin().read_line(&mut yn).expect("Failed to read input");
+
+        match yn.trim() {
+            "y" | "Y" => {
+                let hosts_path = std::path::Path::new("/etc/hosts");
+                let domain_name = format!("{}.htb", machine_info.machine.name.split_whitespace().next().unwrap_or_default().to_string().to_lowercase()); // Using this set of func to remove the os icon after the machine name
+                print!("{}Type the domain name to assign {}[{}]{}: {}", BGREEN, RED, domain_name, BGREEN, RESET);
+                io::stdout().flush().unwrap();
+
+                let mut ans = String::new();
+                io::stdin().read_line(&mut ans).expect("Failed to read input");
+                ans = ans.trim().to_string();
+
+                if ans.is_empty() {
+                    ans = domain_name;
+                }
+
+                if is_inside_container() {
+                    let mut hosts_content = format!("{}  {}\n", machine_info.ip, ans);
+                    if let Ok(existing_content) = std::fs::read_to_string(hosts_path) {
+                        if !existing_content.contains(&hosts_content) {
+                            hosts_content = existing_content + &hosts_content;
+                        }
+                    }
+                    std::fs::write("/tmp/hosts.new", hosts_content).expect("Failed to write to hosts.new");
+                    std::process::Command::new("sudo")
+                        .args(["cp", "-f", "/tmp/hosts.new", "/etc/hosts"])
+                        .status()
+                        .expect("Failed to copy hosts file");
+                    std::fs::remove_file("/tmp/hosts.new").expect("Failed to remove hosts.new");
+                } else {
+                    // Read the current contents of the hosts file
+                    let current_content = fs::read_to_string(hosts_path)?;
+                    let new_entry = format!("{} {}", machine_info.ip, ans);
+                    
+                    // Check if the new entry already exists in the hosts file
+                    if !current_content.contains(&new_entry) {
+                        let sed_pattern = format!("2i{}", new_entry);
+                        std::process::Command::new("sudo")
+                            .args(["sed", "-i", &sed_pattern, "/etc/hosts"])
+                            .status()
+                            .expect("Failed to copy hosts file");
+                    }
+                    else {
+                        println!("Hosts file already contains the new entry.");
+                    }
+                }
+                return Ok(());
+            }
+            "n" | "N" => return Ok(()),
+            _ => println!("Invalid answer."),
+        }
+    }
+}
