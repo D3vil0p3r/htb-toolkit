@@ -17,12 +17,19 @@ pub fn get_active_machine_info() {
     let appkey = get_appkey();
 
     let active_machine = ActiveMachine::get_active(&appkey);
-    let mut machine_info = PlayingMachine::get_machine(&active_machine.name, &appkey);
-    if machine_info.sp_flag == true {
-        machine_info.ip = get_ip(&appkey);
-    }
 
-    PlayingMachine::print_machine(machine_info);
+    // Checking if the active_machine.name exists (so there is an active machine running) to avoid a generic error on api.rs file invoked by fetch_api in get_machine(). The check is done here and not inside ActiveMachine code because only here I need to exit if I don't have an Active Machine running
+    if !active_machine.name.is_empty() {
+        let mut machine_info = PlayingMachine::get_machine(&active_machine.name, &appkey);
+        if machine_info.sp_flag {
+            machine_info.ip = get_ip(&appkey);
+        }
+        
+        PlayingMachine::print_machine(machine_info);
+    }
+    else {
+        println!("Exiting...");
+    }
 }
 
 pub fn reset_machine() {
@@ -58,17 +65,16 @@ pub fn stop_machine() {
     let account = User::get_user(&appkey);
     let machine_type = active_machine.mtype;
 
-    let post_req:  String;
-
-    if machine_type.contains("Starting Point") || account.vpnname.contains("VIP") { //If you are using a VIP VPN, the machine can be stopped only by api/v4/vm/terminate API (even if the machine is free)
-        post_req = String::from("https://www.hackthebox.com/api/v4/vm/terminate");
+    let post_req:  String = if machine_type.contains("Starting Point") || account.vpnname.contains("VIP") { //If you are using a VIP VPN, the machine can be stopped only by api/v4/vm/terminate API (even if the machine is free)
+        String::from("https://www.hackthebox.com/api/v4/vm/terminate")
     }
     else {
-        post_req = String::from("https://www.hackthebox.com/api/v4/machine/stop");
-    }
+        String::from("https://www.hackthebox.com/api/v4/machine/stop")
+    };
+
     let stop_data = serde_json::json!({"machine_id": active_machine.id});
     let stop_response: Response = client
-        .post(&post_req)
+        .post(post_req)
         .header("Authorization", format!("Bearer {}", appkey))
         .json(&stop_data)
         .send()
@@ -78,7 +84,7 @@ pub fn stop_machine() {
     let stop_message = stop_message.get("message").unwrap_or(&serde_json::Value::Null).as_str().unwrap();
     println!("{}{}{}", BGREEN, stop_message, RESET);
 
-    if htbconfig.promptchange == true { //If the prompt is set to change during the playing, when you stop the machine, it should restore the original shell
+    if htbconfig.promptchange { //If the prompt is set to change during the playing, when you stop the machine, it should restore the original shell
         restore_shell();
     }
 }

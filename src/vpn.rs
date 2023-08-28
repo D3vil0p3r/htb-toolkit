@@ -8,7 +8,7 @@ use std::io::{self, Write};
 use std::process::Command;
 use std::thread;
 use std::time::Duration;
-use reqwest;
+
 use serde_json::Value;
 
 pub fn print_vpn_sp_list() {
@@ -58,7 +58,7 @@ fn vpn_type() -> Option<Vec<String>> {
             }
         }
     }
-
+    
     // If HTB VPN is active and tun0 is also active on your client...
     if get_interface_ip("tun0").is_some() {
         Some(vpntype)
@@ -67,7 +67,7 @@ fn vpn_type() -> Option<Vec<String>> {
     }
 }
 
-pub fn check_vpn() {
+pub fn check_vpn(machine_spflag: bool) {
     let mut vpn = String::new();
     if let Some(vpntypes) = vpn_type() {
         let vpntypes_str = vpntypes.join(", "); // Join the VPN types with a comma and space. Note that if we switch two different VPNs, they can still leave together for some time
@@ -90,8 +90,11 @@ pub fn check_vpn() {
         loop {
             match yn.trim() {
                 "y" | "Y" => {
-                    print_vpn_sp_list();
-                    print_vpn_machine_list();
+                    if machine_spflag {
+                        print_vpn_sp_list();
+                    } else {
+                        print_vpn_machine_list();
+                    }
                     println!("Please, provide one VPN server you prefer to connect:");
                     io::stdout().flush().expect("Flush failed!");
                     io::stdin()
@@ -256,7 +259,7 @@ pub fn run_vpn(chosen_server: &str) {
     let switch_url = format!("https://www.hackthebox.com/api/v4/connections/servers/switch/{}", vpn_id);
     let client = reqwest::blocking::Client::new();
     let response = client
-        .post(&switch_url)
+        .post(switch_url)
         .header("Authorization", format!("Bearer {}", appkey))
         .send();
 
@@ -283,7 +286,7 @@ pub fn run_vpn(chosen_server: &str) {
         vpn_id, vpn_tcp
     );
     let ovpn_response = client
-        .get(&ovpn_url)
+        .get(ovpn_url)
         .header("Authorization", format!("Bearer {}", appkey))
         .send();
 

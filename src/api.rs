@@ -1,6 +1,6 @@
 use reqwest::blocking::Client;
 use core::time::Duration;
-use serde_json;
+
 
 //fetch_api checks also if the App Token is valid or not
 pub fn fetch_api(api_url: &str, appkey: &str) -> Result<serde_json::Value, reqwest::Error> {
@@ -25,7 +25,7 @@ pub fn fetch_api(api_url: &str, appkey: &str) -> Result<serde_json::Value, reqwe
         // Handle 429 Too Many Requests
         eprintln!("HTTP 429: Too many requests. Please wait and try again later.");
         std::process::exit(1);
-    } else if status_code >= 500 && status_code < 600 {
+    } else if (500..600).contains(&status_code) {
         // Handle 5xx Server Errors
         eprintln!("HTTP {}: Server error. Please try again later.", status_code);
         std::process::exit(1);

@@ -28,7 +28,7 @@ pub fn list_sp_machines() -> Vec<SPMachine> {
                     let difficulty_str = entry["difficultyText"].as_str().unwrap_or("Difficulty not available").to_string();
                     let avatar_path = entry["avatar"].as_str().unwrap_or("Avatar not available").to_string();
 
-                    let sp_machine = SPMachine { id, name: machine_name_os_icon, difficulty_str: difficulty_str, tier: tier_lvl, avatar: avatar_path };
+                    let sp_machine = SPMachine { id, name: machine_name_os_icon, difficulty_str, tier: tier_lvl, avatar: avatar_path };
 
                     sp_machine_list.push(sp_machine);
                 }
@@ -99,9 +99,9 @@ pub fn list_machines(machine_type: &str) -> Vec<Machine> {
                     id,
                     name: machine_name_os_icon,
                     points,
-                    difficulty_str: difficulty_str,
-                    user_pwn: user_pwn,
-                    root_pwn: root_pwn,
+                    difficulty_str,
+                    user_pwn,
+                    root_pwn,
                     free,
                     avatar: avatar_path,
                 };

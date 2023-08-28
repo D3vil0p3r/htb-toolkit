@@ -9,7 +9,7 @@ use std::thread::sleep;
 pub fn get_ip (appkey: &str) -> String {
     let call_api: &str = "https://www.hackthebox.com/api/v4/machine/active";
 
-    let result = fetch_api(&call_api, &appkey);
+    let result = fetch_api(call_api, appkey);
     let mut machine_ip = String::new();
         
     //println!("Result: {:?}", result); // DEBUG: Print the result before the match
@@ -31,10 +31,10 @@ pub fn get_ip (appkey: &str) -> String {
                         );
 
                         loop {
-                            let sub_result = fetch_api(&get_req, &appkey);
+                            let sub_result = fetch_api(&get_req, appkey);
                             match sub_result {
                                 Ok(sub_json) => {
-                                    machine_ip = (&sub_json["info"]["ip"]).as_str().unwrap_or_default().to_string();
+                                    machine_ip = sub_json["info"]["ip"].as_str().unwrap_or_default().to_string();
 
                                     if !machine_ip.is_empty() && machine_ip != "null" {
                                         return machine_ip;
@@ -54,12 +54,12 @@ pub fn get_ip (appkey: &str) -> String {
                         }
                     }
                     else {
-                        machine_ip = (&json_data["info"]["ip"]).as_str().unwrap_or_default().to_string();
+                        machine_ip = json_data["info"]["ip"].as_str().unwrap_or_default().to_string();
                         return machine_ip;
                     }
                 }
             }
-            return machine_ip;
+            machine_ip
         }
         Err(err) => {
             if err.is_timeout() {
@@ -84,7 +84,7 @@ impl ActiveMachine {
 
         let call_api: &str = "https://www.hackthebox.com/api/v4/machine/active";
 
-        let result = fetch_api(&call_api, &appkey);
+        let result = fetch_api(call_api, appkey);
         
         //println!("Result: {:?}", result); // DEBUG: Print the result before the match
 
@@ -106,14 +106,14 @@ impl ActiveMachine {
                 let entry = &json_data["info"];
                 let id = entry["id"].as_u64().unwrap();
                 let name = entry["name"].as_str().unwrap_or("Name not available").to_string();
-                let ip = get_ip(&appkey);
+                let ip = get_ip(appkey);
                 let mtype = entry["type"].as_str().unwrap_or("null").to_string();
 
                 ActiveMachine {
-                    id: id,
-                    name: name,
-                    ip: ip,
-                    mtype: mtype,
+                    id,
+                    name,
+                    ip,
+                    mtype,
                 }         
             }
             Err(err) => {
@@ -235,8 +235,8 @@ impl PlayingMachine {
 
         let base_api: &str = "https://www.hackthebox.com/api/v4/machine/profile/";
         let call_api = format!("{}{}", base_api, machine_name);
-
-        let result = fetch_api(&call_api, &appkey);
+        
+        let result = fetch_api(&call_api, appkey);
 
         match result {
             Ok(json_data) => {
@@ -252,12 +252,12 @@ impl PlayingMachine {
                             tier_id
                         );
                     
-                        let sub_result = fetch_api(get_req.as_str(), &appkey);
+                        let sub_result = fetch_api(get_req.as_str(), appkey);
                         if let Ok(sub_json_data) = sub_result {
                             let mut index = 0;
                             let mut sp_index = 0;
                             let mut sub_name = &sub_json_data["data"]["machines"][index]["name"];
-                            // Need to search the SP machine in the array of the SP List. HTB does not have an API that collects the info of a single SP machine
+                            // Need to search the SP machine in the array of the SP List.
                             while sub_name != machine_name && index < 20 {
                                 sub_name = &sub_json_data["data"]["machines"][index]["name"];
                                 sp_index = index;
@@ -282,7 +282,7 @@ impl PlayingMachine {
                             
                             return PlayingMachine {
                                 machine: Machine {
-                                    id: id,
+                                    id,
                                     name: machine_name_os_icon,
                                     points: 0,
                                     difficulty_str: sub_entry["difficultyText"]
@@ -300,7 +300,7 @@ impl PlayingMachine {
                                         .to_string(),
                                 },
                                 sp_flag: true,
-                                os: os,
+                                os,
                                 ip: machine_ip,
                                 review: false,
                             };
@@ -326,7 +326,7 @@ impl PlayingMachine {
 
                 PlayingMachine {
                     machine: Machine {
-                        id: id,
+                        id,
                         name: machine_name_os_icon,
                         points: entry["points"].as_u64().unwrap_or(0),
                         difficulty_str: entry["difficultyText"].as_str().unwrap_or("Difficulty not available").to_string(),
@@ -339,7 +339,7 @@ impl PlayingMachine {
                             .to_string(),
                     },
                     sp_flag: false,
-                    os: os,
+                    os,
                     ip: entry["ip"].as_str().unwrap_or("null").to_string(),
                     review: entry["authUserHasReviewed"].as_bool().unwrap_or(false),
                 }         
@@ -387,14 +387,14 @@ impl User {
         let vpnname: String;
 
         // Retrieve User username
-        let result = fetch_api("https://www.hackthebox.com/api/v4/user/info", &appkey);
+        let result = fetch_api("https://www.hackthebox.com/api/v4/user/info", appkey);
     
         match result {
             Ok(json_user) => {
                 id = json_user["info"]["id"].as_u64().unwrap();
                 username = json_user["info"]["name"].as_str().unwrap().to_string();
 
-                let details = fetch_api(&format!("https://www.hackthebox.com/api/v4/user/profile/basic/{}", id.to_string()), &appkey);
+                let details = fetch_api(&format!("https://www.hackthebox.com/api/v4/user/profile/basic/{}", id), appkey);
     
                 match details {
                     Ok(json_details) => {
@@ -421,9 +421,9 @@ impl User {
         }
     
         User {
-            id: id,
+            id,
             name: username,
-            vpnname: vpnname,
+            vpnname,
         }
     }
 }
@@ -451,7 +451,7 @@ impl PlayingUser {
     // get_playinguser fetches for tun0 interface for attacker IP address
     pub fn get_playinguser(appkey: &str) -> Self {
         let mut userip: String = String::new();
-        let account = User::get_user(&appkey);
+        let account = User::get_user(appkey);
         // Retrieve User IP address
         let interface_name = "tun0";
         let ip_address = get_interface_ip(interface_name);
@@ -487,18 +487,18 @@ impl HTBConfig {
 
         let change_prompt = prompt_change.lines()
             .find(|line| line.starts_with("prompt_change="))
-            .map(|line| line.split("=").nth(1).unwrap_or_default())
+            .map(|line| line.split('=').nth(1).unwrap_or_default())
             .unwrap_or_default();
 
         // Convert the change_prompt string to a bool
-        let change_prompt_bool = match change_prompt {
+        
+        match change_prompt {
             "true" => true,
             "false" => false,
             _ => {
                 // Handle other cases if needed, e.g., return a default value
                 false
             }
-        };
-        change_prompt_bool
+        }
     }
 }

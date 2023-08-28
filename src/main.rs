@@ -38,7 +38,7 @@ fn main() {
     let home = env::var("HOME").unwrap_or_default();
     let folder_path = format!("{}/.local/share/icons/hackthebox/avatar", home);
 
-    if !fs::metadata(&folder_path).is_ok() { // Create the folder only if it does not exist
+    if fs::metadata(&folder_path).is_err() { // Create the folder only if it does not exist
         if let Err(err) = fs::create_dir_all(&folder_path) {
             eprintln!("Error creating folder: {}", err);
         } else {

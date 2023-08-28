@@ -23,7 +23,7 @@ pub fn change_shell(machine_info: &mut PlayingMachine, user_info: &mut PlayingUs
             machine_info.machine.name,
             machine_info.ip,
             user_info.user.name,
-            get_interface_ip("tun0").expect("Error on getting tun0 IP address").to_string(),
+            get_interface_ip("tun0").expect("Error on getting tun0 IP address"),
             machine_info.machine.points
         );
         prompt_field = "PS1=.*";
@@ -46,7 +46,7 @@ end"#,
             machine_info.machine.name,
             machine_info.ip,
             user_info.user.name,
-            get_interface_ip("tun0").expect("Error on getting tun0 IP address").to_string(),
+            get_interface_ip("tun0").expect("Error on getting tun0 IP address"),
             machine_info.machine.points
         );
     } else if result.contains("zsh") {
@@ -57,20 +57,20 @@ end"#,
             machine_info.machine.name,
             machine_info.ip,
             user_info.user.name,
-            get_interface_ip("tun0").expect("Error on getting tun0 IP address").to_string(),
+            get_interface_ip("tun0").expect("Error on getting tun0 IP address"),
             machine_info.machine.points
         );
         prompt_field = "PROMPT=.*";
     }
 
     if !std::path::Path::new(&file_bak).exists() {
-        std::fs::copy(&file_bak, &file).unwrap_or_default();
+        std::fs::copy(&file, &file_bak).unwrap_or_default();
     }
     
     if result.contains("bash") && result.contains("zsh") {
         let file_content = std::fs::read_to_string(&file).unwrap_or_default();
-        let new_file_content = file_content.replace(&prompt_field, &prompt);
-        std::fs::write(&file, &new_file_content).unwrap_or_default();
+        let new_file_content = file_content.replace(prompt_field, &prompt);
+        std::fs::write(&file, new_file_content).unwrap_or_default();
     } else if result.contains("fish") {
         std::fs::write(&file, &prompt).unwrap_or_default();
     }
@@ -91,7 +91,8 @@ pub fn restore_shell() {
         file_bak = format!("{}/.zshrc.htb.bak", env::var("HOME").unwrap());
         file = format!("{}/.zshrc", env::var("HOME").unwrap());
     }
-    if fs::metadata(&file).is_ok() {
+    if fs::metadata(&file).is_ok() && std::path::Path::new(&file_bak).exists() {
+        //Restore the prompt file from the backup
         fs::copy(&file_bak, &file).expect("Failed to copy file");
     }
 }
@@ -123,14 +124,12 @@ pub fn get_interface_ip(interface_name: &str) -> Option<String> {
     if let Some(interface) = interfaces.into_iter().find(|iface| iface.name == interface_name) {
         // Iterate through the IP addresses of the interface
         for addr in &interface.ips {
-            match addr.ip() {
-                IpAddr::V4(ipv4) => return Some(ipv4.to_string()),
-                _ => (),
+            if let IpAddr::V4(ipv4) = addr.ip() { 
+                return Some(ipv4.to_string())
             }
         }
     } else {
         println!("Interface not found: {}", interface_name);
-        std::process::exit(1);
     }
     
     None // Return None if interface not found or IP not found
@@ -176,9 +175,9 @@ pub fn print_banner() -> Result<(), Box<dyn std::error::Error>> {
 
 pub fn get_help() {
     // Display Help
-    println!("Spawn and play Hack The Box machines directly on your system.");
+    println!("Play Hack The Box machines directly on your system.");
     println!();
-    println!("{} [-h] [-a] [-f] [-k] <set|reset|delete> [-m] <machine-name> [-l] <free|retired|starting> [-p] <true|false> [-r] [-s] [-u] [-v] <vpn-name>", env::args().nth(0).unwrap());
+    println!("{} [-h] [-a] [-f] [-k] <set|reset|delete> [-m] <machine-name> [-l] <free|retired|starting> [-p] <true|false> [-r] [-s] [-u] [-v] <vpn-name>", env::args().next().unwrap());
     println!();
     println!("Options:");
     println!("-a                            Print information about the current active machine.");
@@ -198,12 +197,12 @@ pub fn get_help() {
     print_vpn_machine_list();
     println!();
     println!("Usage Examples:");
-    println!("{} ", env::args().nth(0).unwrap());
-    println!("{} -k set", env::args().nth(0).unwrap());
-    println!("{} -l free", env::args().nth(0).unwrap());
-    println!("{} -m RouterSpace", env::args().nth(0).unwrap());
-    println!("{} -u", env::args().nth(0).unwrap());
-    println!("{} -v EUFree1", env::args().nth(0).unwrap());
+    println!("{} ", env::args().next().unwrap());
+    println!("{} -k set", env::args().next().unwrap());
+    println!("{} -l free", env::args().next().unwrap());
+    println!("{} -m RouterSpace", env::args().next().unwrap());
+    println!("{} -u", env::args().next().unwrap());
+    println!("{} -v EUFree1", env::args().next().unwrap());
 }
 
 pub fn is_inside_container() -> bool {
@@ -244,7 +243,7 @@ pub fn htb_machines_to_flypie<T: CommonTrait>(machine_list: Vec<T>) -> String {
         .iter()
         .map(|machine| {
             let home = env::var("HOME").unwrap();
-            let machine_name = &machine.get_name().splitn(2, ' ').nth(1).unwrap(); //Remove the "[os icon] " from the machine name
+            let machine_name = &machine.get_name().split_once(' ').unwrap().1; //Remove the "[os icon] " from the machine name
             let machine_avatar = &machine.get_avatar();
 
             let avatar_url = format!("https://www.hackthebox.com{}", machine_avatar);
@@ -260,7 +259,7 @@ pub fn htb_machines_to_flypie<T: CommonTrait>(machine_list: Vec<T>) -> String {
                 terminal, machine_name, shell
             );
 
-            let response = reqwest::blocking::get(&avatar_url);
+            let response = reqwest::blocking::get(avatar_url);
             if let Ok(mut r) = response {
                 if r.status().is_success() {
                     let mut image_data = Vec::new();
@@ -270,7 +269,7 @@ pub fn htb_machines_to_flypie<T: CommonTrait>(machine_list: Vec<T>) -> String {
                     avatar_file.write_all(&image_data).unwrap();
 
                     Command::new("convert")
-                        .args(&[&avatar_filename, "-resize", "200x", &avatar_filename])
+                        .args([&avatar_filename, "-resize", "200x", &avatar_filename])
                         .status()
                         .unwrap();
                 } else {

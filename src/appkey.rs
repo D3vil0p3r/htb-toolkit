@@ -16,8 +16,8 @@ pub fn get_appkey() -> String {
         
         match read_file_contents(secret_path) {
             Ok(secret_content) => {
-                let result_content = secret_content.replace("\n", "");
-                result_content
+                
+                secret_content.replace('\n', "")
             }
             Err(error) => {
                 if error.kind() == io::ErrorKind::NotFound {
@@ -67,7 +67,7 @@ pub fn set_appkey() {
             let store_args = ["store", "--label='HTB API key'", "htb-api", "user-htb-api"];
 
             let mut store_process = Command::new(store_command)
-                .args(&store_args)
+                .args(store_args)
                 .stdin(Stdio::inherit()) // Pass stdin from parent process
                 .stdout(Stdio::inherit()) // Pass stdout to parent process
                 .stderr(Stdio::inherit()) // Pass stderr to parent process
@@ -106,7 +106,7 @@ pub fn delete_appkey() {
             let clear_args = ["clear", "htb-api", "user-htb-api"];
 
             let clear_output = Command::new(clear_command)
-                .args(&clear_args)
+                .args(clear_args)
                 .output()
                 .expect("Failed to execute secret-tool command");
 

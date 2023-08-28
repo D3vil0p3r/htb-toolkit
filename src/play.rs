@@ -36,7 +36,7 @@ pub fn play_machine(machine_name: &str) -> Result<(), Box<dyn std::error::Error>
     println!("Stopping any active machine...");
     stop_machine();
 
-    check_vpn();    
+    check_vpn(machine_info.sp_flag);    
 
     //For SP Machines and VIP VPN (not Free VPN)
     let client = Client::new();
@@ -81,7 +81,7 @@ pub fn play_machine(machine_name: &str) -> Result<(), Box<dyn std::error::Error>
         println!("Request failed with status: {}", status_code);
     }
 
-    if machine_info.ip == "" { //Starting Point case because SP IP address is assigned only after spawn of the machine
+    if machine_info.ip.is_empty() { //Starting Point case because SP IP address is assigned only after spawn of the machine
         machine_info.ip = get_ip(&appkey);
     }
     
@@ -97,7 +97,7 @@ pub fn play_machine(machine_name: &str) -> Result<(), Box<dyn std::error::Error>
         println!("{}Hey! You have already found the Root Flag! Keep it up!{}", BGREEN, RESET);
     }
 
-    if htbconfig.promptchange == true { //If the prompt is set to change during the playing...
+    if htbconfig.promptchange { //If the prompt is set to change during the playing...
         change_shell(&mut machine_info, &mut user_info);
     }
 
@@ -132,7 +132,7 @@ pub fn play_machine(machine_name: &str) -> Result<(), Box<dyn std::error::Error>
                     }
                     std::fs::write("/tmp/hosts.new", hosts_content).expect("Failed to write to hosts.new");
                     std::process::Command::new("sudo")
-                        .args(&["cp", "-f", "/tmp/hosts.new", "/etc/hosts"])
+                        .args(["cp", "-f", "/tmp/hosts.new", "/etc/hosts"])
                         .status()
                         .expect("Failed to copy hosts file");
                     std::fs::remove_file("/tmp/hosts.new").expect("Failed to remove hosts.new");
@@ -145,7 +145,7 @@ pub fn play_machine(machine_name: &str) -> Result<(), Box<dyn std::error::Error>
                     if !current_content.contains(&new_entry) {
                         let sed_pattern = format!("2i{}", new_entry);
                         std::process::Command::new("sudo")
-                            .args(&["sed", "-i", &sed_pattern, "/etc/hosts"])
+                            .args(["sed", "-i", &sed_pattern, "/etc/hosts"])
                             .status()
                             .expect("Failed to copy hosts file");
                     }
@@ -252,7 +252,7 @@ pub fn submit_flag() {
         }
     }
 
-    if machine_info.machine.user_pwn != "null" && machine_info.machine.root_pwn != "null" && machine_info.review == true {
+    if machine_info.machine.user_pwn != "null" && machine_info.machine.root_pwn != "null" && machine_info.review {
         println!("{}Wonderful! You PWNED {}! Would you like to submit feedback?{}", BYELLOW, machine_info.machine.name, RESET);
 
         loop {
