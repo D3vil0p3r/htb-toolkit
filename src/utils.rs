@@ -176,7 +176,7 @@ pub fn print_banner() -> Result<(), Box<dyn std::error::Error>> {
 
 pub fn get_help() {
     // Display Help
-    println!("HTB Play allows you to spawn Hack The Box machines from CLI.");
+    println!("Spawn and play Hack The Box machines directly on your system.");
     println!();
     println!("{} [-h] [-a] [-f] [-k] <set|reset|delete> [-m] <machine-name> [-l] <free|retired|starting> [-p] <true|false> [-r] [-s] [-u] [-v] <vpn-name>", env::args().nth(0).unwrap());
     println!();

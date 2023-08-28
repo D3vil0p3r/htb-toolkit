@@ -23,7 +23,13 @@ fn main() {
 
     if args.len() < 2 {
         // Handle the case where no command-line arguments are provided
-        println!("Usage: {} [options]", args[0]);
+        match print_banner() {
+            Ok(_) => {}
+            Err(error) => {
+                eprintln!("Error: {}", error);
+            }
+        }
+        get_help();
         return;
     }
 
