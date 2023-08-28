@@ -136,7 +136,7 @@ pub fn update_machines() -> io::Result<()> {
     let mut contents = String::new();
     fly_file.read_to_string(&mut contents)?;
 
-    let fly_pattern = r#"(.*?)(\{\\"name\\":\\"Available Machines\\",\\"icon\\":\\"/usr/share/icons/htb-tools/htb-machines.png\\",\\"type\\":\\"CustomMenu\\",\\"children\\":)(.*?)(,\\"angle\\":-1,\\"data\\":\{\}\})(.*)"#;
+    let fly_pattern = r#"(.*?)(\{\\"name\\":\\"Available Machines\\",\\"icon\\":\\"/usr/share/icons/htb-toolkit/htb-machines.png\\",\\"type\\":\\"CustomMenu\\",\\"children\\":)(.*?)(,\\"angle\\":-1,\\"data\\":\{\}\})(.*)"#;
     let re = Regex::new(fly_pattern).unwrap();
 
     let modified_contents = re.replace(&contents, |caps: &regex::Captures| {
@@ -180,7 +180,7 @@ pub fn update_machines() -> io::Result<()> {
         fly_file.read_to_string(&mut contents)?;
 
         let fly_pattern = format!(
-            r#"(.*?)(\{{\\"name\\":\\"Tier {}\\",\\"icon\\":\\"/usr/share/icons/htb-tools/Tier-{}.svg\\",\\"type\\":\\"CustomMenu\\",\\"children\\":)(.*?)(,\\"angle\\":-1,\\"data\\":{})"#,
+            r#"(.*?)(\{{\\"name\\":\\"Tier {}\\",\\"icon\\":\\"/usr/share/icons/htb-toolkit/Tier-{}.svg\\",\\"type\\":\\"CustomMenu\\",\\"children\\":)(.*?)(,\\"angle\\":-1,\\"data\\":{})"#,
             tier_lvl,
             tier_lvl,
             ""
