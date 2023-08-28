@@ -218,9 +218,10 @@ pub fn submit_flag() {
                     io::stdin().read_line(&mut review_machine).expect("Failed to read input");
     
                     println!("{}How many stars would you give to this machine?{}", BGREEN, RESET);
-                    println!("Stars (1 to 5):");
+                    print!("Stars (1 to 5): ");
     
                     let mut review_stars = String::new();
+                    io::stdout().flush().expect("Flush failed!");
                     io::stdin().read_line(&mut review_stars).expect("Failed to read input");
                     let review_stars = review_stars.trim().parse::<u32>().unwrap_or(0);
     

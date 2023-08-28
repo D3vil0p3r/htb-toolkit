@@ -84,8 +84,8 @@ pub fn check_vpn(machine_spflag: bool) {
             );
         }
 
-        println!("Do you want to terminate the listed VPN and choose a new one (y/n)?");
-        io::stdout().flush().unwrap();
+        print!("Do you want to terminate the listed VPN and choose a new one (y/n)? ");
+        io::stdout().flush().expect("Flush failed!");
         io::stdin().read_line(&mut yn).expect("Failed to read input");
         loop {
             match yn.trim() {
@@ -95,7 +95,7 @@ pub fn check_vpn(machine_spflag: bool) {
                     } else {
                         print_vpn_machine_list();
                     }
-                    println!("Please, provide one VPN server you prefer to connect:");
+                    print!("Please, provide one VPN server you prefer to connect: ");
                     io::stdout().flush().expect("Flush failed!");
                     io::stdin()
                         .read_line(&mut vpn)
@@ -114,7 +114,7 @@ pub fn check_vpn(machine_spflag: bool) {
         } else {
             print_vpn_machine_list();
         }
-        println!("Please, provide one VPN server you prefer to connect:");
+        print!("Please, provide one VPN server you prefer to connect: ");
         io::stdout().flush().expect("Flush failed!");
         io::stdin()
             .read_line(&mut vpn)
@@ -212,7 +212,7 @@ pub fn run_vpn(chosen_server: &str) {
             key.clear(); // Clear the variable's content
             print_vpn_sp_list();
             print_vpn_machine_list();
-            println!("Please, provide one VPN server you prefer to connect:");
+            print!("Please, provide one VPN server you prefer to connect: ");
             io::stdout().flush().expect("Flush failed!");
             io::stdin()
                 .read_line(&mut key)
@@ -228,8 +228,9 @@ pub fn run_vpn(chosen_server: &str) {
     let vpn_id = vpn_servers[&key];
 
     loop {
-        println!("\n{}Would you like to connect to Hack The Box VPN by UDP or TCP? [UDP]{}", BGREEN, RESET);
         let mut input = String::new();
+        print!("\n{}Would you like to connect to Hack The Box VPN by UDP or TCP? [UDP] {}", BGREEN, RESET);
+        io::stdout().flush().expect("Flush failed!");
         io::stdin().read_line(&mut input).expect("Failed to read line");
         input = input.trim().to_string(); //remove \n from Enter keyboard button
 

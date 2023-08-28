@@ -293,7 +293,7 @@ pub fn add_hosts(machine_info: &PlayingMachine) -> Result<(), Box<dyn std::error
     loop {
         let mut yn = String::new();
         print!("\n{}Would you like to assign a domain name to the target machine IP address and store it in /etc/hosts (y/n)? {}", BGREEN, RESET);
-        io::stdout().flush().unwrap();
+        io::stdout().flush().expect("Flush failed!");
         io::stdin().read_line(&mut yn).expect("Failed to read input");
 
         match yn.trim() {
@@ -301,7 +301,7 @@ pub fn add_hosts(machine_info: &PlayingMachine) -> Result<(), Box<dyn std::error
                 let hosts_path = std::path::Path::new("/etc/hosts");
                 let domain_name = format!("{}.htb", machine_info.machine.name.split_whitespace().next().unwrap_or_default().to_string().to_lowercase()); // Using this set of func to remove the os icon after the machine name
                 print!("{}Type the domain name to assign {}[{}]{}: {}", BGREEN, RED, domain_name, BGREEN, RESET);
-                io::stdout().flush().unwrap();
+                io::stdout().flush().expect("Flush failed!");
 
                 let mut ans = String::new();
                 io::stdin().read_line(&mut ans).expect("Failed to read input");

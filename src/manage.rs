@@ -208,8 +208,9 @@ pub fn update_machines() -> io::Result<()> {
     fs::remove_file(input_config)?;
     fs::remove_file(output_config)?;
 
-    println!("Machines updated. Press Enter to continue...");
+    print!("Machines updated. Press Enter to continue...");
     let mut input = String::new();
+    io::stdout().flush().expect("Flush failed!");
     io::stdin().read_line(&mut input).expect("Failed to read line");
 
     Ok(())
