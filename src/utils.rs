@@ -177,6 +177,7 @@ pub fn get_help() {
     // Display Help
     println!("Play Hack The Box machines directly on your system.");
     println!();
+    std::thread::sleep(std::time::Duration::from_secs(2)); //Showing the description for some secs before showing the help message
     println!("{} [-h] [-a] [-f] [-k] <set|reset|delete> [-m] <machine-name> [-l] <free|retired|starting> [-p] <true|false> [-r] [-s] [-u] [-v] <vpn-name>", env::args().next().unwrap());
     println!();
     println!("Options:");
