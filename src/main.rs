@@ -117,9 +117,9 @@ fn main() {
         }
         "-v" => {
             if args.len() < 3 {
-                println!("Usage: {} -v", args[0]);
+                println!("Usage: {} -v <vpn-name>", args[0]);
             } else {
-                check_vpn();
+                run_vpn(&args[2]);
             }
         }
         _ => {

@@ -117,7 +117,7 @@ pub fn check_vpn() {
     }
 }
 
-fn run_vpn(chosen_server: &str) {
+pub fn run_vpn(chosen_server: &str) {
 
     let appkey = get_appkey();
     
