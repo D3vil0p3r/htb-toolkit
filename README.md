@@ -31,8 +31,8 @@ sudo pacman -Syyu
 sudo pacman -S htb-toolkit
 ```
 
-## Build from source
-
+# Build from source
+## Non-Arch-based Linux distro
 Install the following runtime dependencies:
 ```
 coreutils gnome-keyring gzip imagemagick openvpn
