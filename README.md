@@ -33,9 +33,13 @@ sudo pacman -S htb-toolkit
 
 ## Build from source
 
-Install the following dependencies:
+Install the following runtime dependencies:
 ```
-sudo pacman -S coreutils gnome-keyring gzip imagemagick openvpn
+coreutils gnome-keyring gzip imagemagick openvpn
+```
+Install the following build dependencies:
+```
+git cargo
 ```
 Clone the repository by:
 ```
