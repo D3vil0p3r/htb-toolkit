@@ -52,3 +52,7 @@ It will create the binary file **htb-toolkit** in `htb-toolkit/target/release`. 
 ```
 sudo cp htb-toolkit/target/release/htb-toolkit /usr/bin/
 ```
+Now you can run:
+```
+htb-toolkit -h
+```
