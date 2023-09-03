@@ -19,7 +19,7 @@ and, after **Password:** prompt, paste the App Token value and press **Enter**. 
 Showcase of HTB Toolkit:
 
 [![HTB Toolkit Asciicast](https://github.com/D3vil0p3r/htb-toolkit/assets/83867734/cfc8aac4-f58e-4b44-8ac1-12e1842c801f)](https://asciinema.org/a/605148)
-Source: [Asciinema](https://asciinema.org/a/605148)
+Interactive source: [Asciinema](https://asciinema.org/a/605148)
 
 # Install
 
