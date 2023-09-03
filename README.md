@@ -16,11 +16,10 @@ and, after **Password:** prompt, paste the App Token value and press **Enter**. 
 
 **Don't share your App Token with anyone!**
 
-In the following video you can spectate a showcase of HTB Toolkit:
+Showcase of HTB Toolkit:
 
-<a href="http://www.google.com">
-  <img src="https://github.com/D3vil0p3r/htb-toolkit/assets/83867734/cfc8aac4-f58e-4b44-8ac1-12e1842c801f">
-</a>
+[![HTB Toolkit Asciicast](https://github.com/D3vil0p3r/htb-toolkit/assets/83867734/cfc8aac4-f58e-4b44-8ac1-12e1842c801f)](https://asciinema.org/a/605148)
+Source: [Asciinema](https://asciinema.org/a/605148)
 
 # Install
 
