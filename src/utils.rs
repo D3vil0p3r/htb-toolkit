@@ -5,6 +5,7 @@ use crate::colors::*;
 use crate::types::*;
 use crate::vpn::*;
 use pnet::datalink;
+use regex::Regex;
 use std::fs::{self, File};
 use std::net::IpAddr;
 
@@ -19,7 +20,7 @@ pub fn change_shell(machine_info: &mut PlayingMachine, user_info: &mut PlayingUs
         file_bak = format!("{}/.bashrc.htb.bak", std::env::var("HOME").unwrap_or_default());
         file = format!("{}/.bashrc", std::env::var("HOME").unwrap_or_default());
         prompt = format!(
-            "PS1=\"\\e[32m\\]┌──[Target:{}🚀🌐IP:{}🔥\\e[34m\\]Attacker:{}📡IP:{}\\e[32m\\]🏅Prize:{} points]\\\n└──╼[👾]\\\\[\\e[36m\\]\\$(pwd) $ \\[\\e[0m\\]\"",
+            "PS1=\"\\e[32m\\]┌──[Target:{}🚀🌐IP:{}🔥\\e[34m\\]Attacker:{}📡IP:{}\\e[32m\\]🏅Prize:{} points]\\n└──╼[👾]\\\\[\\e[36m\\]\\$(pwd) $ \\[\\e[0m\\]\"",
             machine_info.machine.name,
             machine_info.ip,
             user_info.user.name,
@@ -67,10 +68,11 @@ end"#,
         std::fs::copy(&file, &file_bak).unwrap_or_default();
     }
     
-    if result.contains("bash") && result.contains("zsh") {
+    if result.contains("bash") || result.contains("zsh") {
         let file_content = std::fs::read_to_string(&file).unwrap_or_default();
-        let new_file_content = file_content.replace(prompt_field, &prompt);
-        std::fs::write(&file, new_file_content).unwrap_or_default();
+        let regex = Regex::new(prompt_field).unwrap();
+        let new_file_content = regex.replace_all(&file_content, prompt);
+        std::fs::write(&file, new_file_content.as_ref()).unwrap_or_default();
     } else if result.contains("fish") {
         std::fs::write(&file, &prompt).unwrap_or_default();
     }
