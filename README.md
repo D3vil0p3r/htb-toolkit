@@ -24,7 +24,7 @@ Interactive source: [Asciinema](https://asciinema.org/a/605148)
 # Install
 
 ## Arch-based Linux distro
-Add Athena OS repository to your system as described [here](https://athenaos.org/en/configuration/repositories/#installation).
+Add [Athena OS](https://athenaos.org/) repository to your system as described [here](https://athenaos.org/en/configuration/repositories/#installation).
 
 Run:
 ```
