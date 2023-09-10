@@ -35,8 +35,14 @@ sudo pacman -S htb-toolkit
 # Build from source
 ## Non-Arch-based Linux distro
 Install the following runtime dependencies:
+
+**Arch-based Distros**
 ```
-coreutils gnome-keyring gzip imagemagick openvpn
+coreutils libsecret gzip imagemagick openvpn
+```
+**Debian-based Distros**
+```
+coreutils libsecret-tools libssl-dev gzip imagemagick openvpn
 ```
 Install the following build dependencies:
 ```
