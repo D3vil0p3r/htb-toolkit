@@ -38,7 +38,7 @@ Install the following runtime dependencies:
 
 **Arch-based Distros**
 ```
-coreutils libsecret gzip imagemagick openvpn
+coreutils libsecret openssl gzip imagemagick openvpn
 ```
 **Debian-based Distros**
 ```
