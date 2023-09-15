@@ -241,7 +241,7 @@ pub async fn update_machines() -> io::Result<()> {
     fs::remove_file(input_config)?;
     fs::remove_file(output_config)?;
 
-    print!("Machines updated. Press Enter to continue...");
+    print!("\n{}Machines updated. Press Enter to continue...{}", BGREEN, RESET);
     let mut input = String::new();
     io::stdout().flush().expect("Flush failed!");
     io::stdin().read_line(&mut input).expect("Failed to read line");

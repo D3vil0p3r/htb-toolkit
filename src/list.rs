@@ -6,7 +6,7 @@ use crate::types::*;
 pub async fn list_sp_machines() -> Vec<SPMachine> {
     let tiers = 3;
 
-    println!("\x1B[93mConnecting to HTB server...\x1B[0m\n");
+    println!("\n\x1B[93mConnecting to HTB server...\x1B[0m\n");
     let appkey = get_appkey();
 
     let mut all_sp_machine_list: Vec<SPMachine> = Vec::new();
@@ -55,7 +55,7 @@ pub async fn list_machines(machine_type: &str) -> Vec<Machine> {
     let mut machine_list: Vec<Machine> = Vec::new();
 
     println!("Listing machines... This operation could require some minutes...");
-    println!("\x1B[93mConnecting to HTB server...\x1B[0m\n");
+    println!("\n\x1B[93mConnecting to HTB server...\x1B[0m\n");
 
     let appkey = get_appkey(); // Retrieve the app key
 
