@@ -41,8 +41,6 @@ fn main() {
     if fs::metadata(&folder_path).is_err() { // Create the folder only if it does not exist
         if let Err(err) = fs::create_dir_all(&folder_path) {
             eprintln!("Error creating folder: {}", err);
-        } else {
-            println!("Folder created successfully.");
         }
     }
     

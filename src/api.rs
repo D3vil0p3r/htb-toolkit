@@ -1,5 +1,6 @@
 use reqwest::blocking::Client;
 use core::time::Duration;
+use std::io::{self, Write};
 
 
 //fetch_api checks also if the App Token is valid or not
@@ -35,6 +36,10 @@ pub fn fetch_api(api_url: &str, appkey: &str) -> Result<serde_json::Value, reqwe
         Ok(data) => data,
         Err(err) => {
             eprintln!("Check if your API key is incorrect or expired. Renew your API key by running 'htb-toolkit -k reset'. Error details: {}", err);
+            print!("Press Enter to continue...");
+            let mut input = String::new();
+            io::stdout().flush().expect("Flush failed!");
+            io::stdin().read_line(&mut input).expect("Failed to read line");
             std::process::exit(1);
         }
     };
