@@ -132,7 +132,7 @@ pub fn update_machines() -> io::Result<()> {
         .arg(&dump_command)
         .status()?;
 
-    let mut fly_file = File::open(input_config)?;
+    let mut fly_file = File::open(&input_config)?;
     let mut contents = String::new();
     fly_file.read_to_string(&mut contents)?;
 
@@ -143,7 +143,7 @@ pub fn update_machines() -> io::Result<()> {
         format!("{}{}{}{}{}", &caps[1], &caps[2], fly_new, &caps[4], &caps[5])
     });
 
-    let mut f = File::create(output_config)?;
+    let mut f = File::create(&output_config)?;
     f.write_all(modified_contents.as_bytes())?;
 
     let load_command = format!("dconf load /org/gnome/shell/extensions/flypie/ < {}", output_config);
@@ -175,7 +175,7 @@ pub fn update_machines() -> io::Result<()> {
             .arg(&dump_command)
             .status()?;
 
-        let mut fly_file = File::open(input_config)?;
+        let mut fly_file = File::open(&input_config)?;
         let mut contents = String::new();
         fly_file.read_to_string(&mut contents)?;
 
@@ -195,7 +195,7 @@ pub fn update_machines() -> io::Result<()> {
         });
         let modified_contents_str = modified_contents.to_string();
         
-        let mut f = File::create(output_config)?;
+        let mut f = File::create(&output_config)?;
         f.write_all(modified_contents_str.as_bytes())?;
 
         let load_command = format!("dconf load /org/gnome/shell/extensions/flypie/ < {}", output_config);
