@@ -118,9 +118,9 @@ pub fn prompt_setting(option: &str) {
 pub fn update_machines() -> io::Result<()> {
 
     println!("Retrieving updated data from Hack The Box... Gimme some time hackerzzz...");
-
-    let input_config = "input_config.txt";
-    let output_config = "output_config.txt";
+    let home = env::var("HOME").unwrap_or_default();
+    let input_config = format!("{}/.input_config.txt", home);
+    let output_config = format!("{}/.output_config.txt", home);
 
     let free_machine_list = list_machines("free");
 
