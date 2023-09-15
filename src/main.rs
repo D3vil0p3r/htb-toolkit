@@ -18,7 +18,8 @@ use std::fs;
 use std::path::Path;
 use std::process::Command;
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let args: Vec<String> = env::args().collect();
 
     if args.len() < 2 {
@@ -49,7 +50,7 @@ fn main() {
 
     let file = Path::new(&htb_config);
     if !file.exists() {
-        let lines = ["# HTB configuration file.\n\n", "# Enable/Disable shell prompt change\n", "prompt_change=false\n"];
+        let lines = ["# HTB configuration file.\n\n", "# Enable/Disable shell prompt change\n", "prompt_change=true\n"];
         fs::write(&htb_config, lines.join(""))
             .expect("Failed to create HTB config file");
     }
@@ -75,10 +76,10 @@ fn main() {
             get_help();
         }
         "-a" => {
-            get_active_machine_info();
+            get_active_machine_info().await;
         }
         "-f" => {
-            submit_flag();
+            submit_flag().await;
         }
         "-k" => {
             if args.len() < 3 || (args[2] != "set" && args[2] != "reset" && args[2] != "delete") {
@@ -87,21 +88,21 @@ fn main() {
                 manage_app_key(&args[2]);
             }
         }
-        "-m" => {
-            if args.len() < 3 {
-                println!("Usage: {} -m <machine-name>", args[0]);
-            } else {
-                let _ = play_machine(&args[2]);
-            }
-        }
         "-l" => {
             if args.len() < 3 || (args[2] != "free" && args[2] != "retired" && args[2] != "starting") {
                 println!("Usage: {} -l <free|retired|starting>", args[0]);
             } else if args[2] == "free" || args[2] == "retired" {
-                list_machines(&args[2]);
+                list_machines(&args[2]).await; //Use await because inside it I use asycn fetch_api
             } else if args[2] == "starting" {
-                list_sp_machines();
+                list_sp_machines().await;
             } 
+        }
+        "-m" => {
+            if args.len() < 3 {
+                println!("Usage: {} -m <machine-name>", args[0]);
+            } else {
+                let _ = play_machine(&args[2]).await;
+            }
         }
         "-p" => {
             if args.len() < 3 || (args[2] != "true" && args[2] != "false") {
@@ -111,19 +112,19 @@ fn main() {
             }
         }
         "-r" => {
-            reset_machine();
+            reset_machine().await;
         }
         "-s" => {
-            stop_machine();
+            stop_machine().await;
         }
         "-u" => {
-            let _ = update_machines();
+            let _ = update_machines().await;
         }
         "-v" => {
             if args.len() < 3 {
                 println!("Usage: {} -v <vpn-name>", args[0]);
             } else {
-                run_vpn(&args[2]);
+                run_vpn(&args[2]).await;
             }
         }
         _ => {

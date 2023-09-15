@@ -1,9 +1,9 @@
 use crate::appkey::get_appkey;
-use crate::api::fetch_api;
+use crate::api::fetch_api_async;
 use crate::colors::*;
 use crate::types::*;
 
-pub fn list_sp_machines() -> Vec<SPMachine> {
+pub async fn list_sp_machines() -> Vec<SPMachine> {
     let tiers = 3;
 
     println!("\x1B[93mConnecting to HTB server...\x1B[0m\n");
@@ -14,9 +14,10 @@ pub fn list_sp_machines() -> Vec<SPMachine> {
     for index in 1..=tiers {
         let mut sp_machine_list: Vec<SPMachine> = Vec::new();
         let tier_lvl = index - 1;
-        let result = fetch_api(&("https://www.hackthebox.com/api/v4/sp/tier/".to_owned() + index.to_string().as_str()), &appkey);
+        let tier_url = format!("https://www.hackthebox.com/api/v4/sp/tier/{}", index);
+        let result = fetch_api_async(&tier_url, &appkey);
 
-        match result {
+        match result.await {
             Ok(json_data) => {
                 println!("\x1B[92mDone.\x1B[0m\n");
 
@@ -50,24 +51,24 @@ pub fn list_sp_machines() -> Vec<SPMachine> {
     all_sp_machine_list
 }
 
-pub fn list_machines(machine_type: &str) -> Vec<Machine> {
+pub async fn list_machines(machine_type: &str) -> Vec<Machine> {
     let mut machine_list: Vec<Machine> = Vec::new();
 
-    println!("Listing machines...");
+    println!("Listing machines... This operation could require some minutes...");
     println!("\x1B[93mConnecting to HTB server...\x1B[0m\n");
 
     let appkey = get_appkey(); // Retrieve the app key
 
     let result = match machine_type {
-        "free" => fetch_api("https://www.hackthebox.com/api/v4/machine/list", &appkey),
-        "retired" => fetch_api("https://www.hackthebox.com/api/v4/machine/list/retired", &appkey),
+        "free" => fetch_api_async("https://www.hackthebox.com/api/v4/machine/list", &appkey),
+        "retired" => fetch_api_async("https://www.hackthebox.com/api/v4/machine/list/retired", &appkey),
         _ => {
             eprintln!("\x1B[31mInvalid machine type: {}\x1B[0m", machine_type);
             return machine_list;
         }
     };
     
-    match result {
+    match result.await {
         Ok(json_data) => {
             println!("\x1B[92mDone.\x1B[0m\n");
             println!("\x1B[93mCalculating the number of machines...\x1B[0m\n");

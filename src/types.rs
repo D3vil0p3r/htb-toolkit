@@ -1,4 +1,4 @@
-use crate::api::fetch_api;
+use crate::api::fetch_api_async;
 use crate::colors::*;
 use crate::utils::get_interface_ip;
 use core::time::Duration;
@@ -6,15 +6,15 @@ use std::fs;
 use std::process;
 use std::thread::sleep;
 
-pub fn get_ip (appkey: &str) -> String {
+pub async fn get_ip (appkey: &str) -> String {
     let call_api: &str = "https://www.hackthebox.com/api/v4/machine/active";
 
-    let result = fetch_api(call_api, appkey);
+    let result = fetch_api_async(call_api, appkey);
     let mut machine_ip = String::new();
         
     //println!("Result: {:?}", result); // DEBUG: Print the result before the match
 
-    match result {
+    match result.await {
         Ok(json_data) => {
             //println!("Fetched JSON Data: {:?}", json_data); // Print the fetched JSON data
             if let Some(info) = json_data.get("info") {
@@ -31,8 +31,8 @@ pub fn get_ip (appkey: &str) -> String {
                         );
 
                         loop {
-                            let sub_result = fetch_api(&get_req, appkey);
-                            match sub_result {
+                            let sub_result = fetch_api_async(&get_req, appkey);
+                            match sub_result.await {
                                 Ok(sub_json) => {
                                     machine_ip = sub_json["info"]["ip"].as_str().unwrap_or_default().to_string();
 
@@ -72,6 +72,7 @@ pub fn get_ip (appkey: &str) -> String {
     }
 }
 
+#[derive(Clone)]
 pub struct ActiveMachine {
     pub id: u64,
     pub name: String,
@@ -80,15 +81,15 @@ pub struct ActiveMachine {
 }
 
 impl ActiveMachine {
-    pub fn get_active(appkey: &str) -> Self {
+    pub async fn get_active(appkey: &str) -> Self {
 
         let call_api: &str = "https://www.hackthebox.com/api/v4/machine/active";
 
-        let result = fetch_api(call_api, appkey);
+        let result = fetch_api_async(call_api, appkey);
         
         //println!("Result: {:?}", result); // DEBUG: Print the result before the match
 
-        match result {
+        match result.await {
             Ok(json_data) => {
                 //println!("Fetched JSON Data: {:?}", json_data); // Print the fetched JSON data
                 if let Some(info) = json_data.get("info") {
@@ -106,7 +107,7 @@ impl ActiveMachine {
                 let entry = &json_data["info"];
                 let id = entry["id"].as_u64().unwrap();
                 let name = entry["name"].as_str().unwrap_or("Name not available").to_string();
-                let ip = get_ip(appkey);
+                let ip = get_ip(appkey).await;
                 let mtype = entry["type"].as_str().unwrap_or("null").to_string();
 
                 ActiveMachine {
@@ -231,14 +232,14 @@ impl PlayingMachine {
         icon_str
     }
 
-    pub fn get_machine(machine_name: &str, appkey: &str) -> Self {
+    pub async fn get_machine(machine_name: &str, appkey: &str) -> Self {
 
         let base_api: &str = "https://www.hackthebox.com/api/v4/machine/profile/";
         let call_api = format!("{}{}", base_api, machine_name);
         
-        let result = fetch_api(&call_api, appkey);
+        let result = fetch_api_async(&call_api, appkey);
 
-        match result {
+        match result.await {
             Ok(json_data) => {
                 if let Some(message) = json_data.get("message").and_then(|m| m.as_str()) {
                     if message.contains("Machine not found") {
@@ -252,8 +253,8 @@ impl PlayingMachine {
                             tier_id
                         );
                     
-                        let sub_result = fetch_api(get_req.as_str(), appkey);
-                        if let Ok(sub_json_data) = sub_result {
+                        let sub_result = fetch_api_async(get_req.as_str(), appkey);
+                        if let Ok(sub_json_data) = sub_result.await {
                             let mut index = 0;
                             let mut sp_index = 0;
                             let mut sub_name = &sub_json_data["data"]["machines"][index]["name"];
@@ -381,22 +382,23 @@ impl User {
         }
     }*/
 
-    pub fn get_user(appkey: &str) -> Self {
+    pub async fn get_user(appkey: &str) -> Self {
         let id: u64;
         let username: String;
         let vpnname: String;
 
         // Retrieve User username
-        let result = fetch_api("https://www.hackthebox.com/api/v4/user/info", appkey);
+        let result = fetch_api_async("https://www.hackthebox.com/api/v4/user/info", appkey);
     
-        match result {
+        match result.await {
             Ok(json_user) => {
                 id = json_user["info"]["id"].as_u64().unwrap();
                 username = json_user["info"]["name"].as_str().unwrap().to_string();
 
-                let details = fetch_api(&format!("https://www.hackthebox.com/api/v4/user/profile/basic/{}", id), appkey);
+                let user_id_url = format!("https://www.hackthebox.com/api/v4/user/profile/basic/{}", id);
+                let details = fetch_api_async(&user_id_url, appkey);
     
-                match details {
+                match details.await {
                     Ok(json_details) => {
                         vpnname = json_details["profile"]["server"].as_str().unwrap().to_string();
                     }
@@ -449,9 +451,9 @@ impl PlayingUser {
     }*/
 
     // get_playinguser fetches for tun0 interface for attacker IP address
-    pub fn get_playinguser(appkey: &str) -> Self {
+    pub async fn get_playinguser(appkey: &str) -> Self {
         let mut userip: String = String::new();
-        let account = User::get_user(appkey);
+        let account = User::get_user(appkey).await;
         // Retrieve User IP address
         let interface_name = "tun0";
         let ip_address = get_interface_ip(interface_name);

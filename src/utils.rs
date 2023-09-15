@@ -6,8 +6,12 @@ use crate::types::*;
 use crate::vpn::*;
 use pnet::datalink;
 use regex::Regex;
-use std::fs::{self, File};
+use reqwest::Client;
+use std::fs;
 use std::net::IpAddr;
+use tokio::fs::File as AsyncFile;
+use tokio::io::{AsyncWriteExt, BufWriter};
+use tokio::sync::mpsc;
 
 pub fn change_shell(machine_info: &mut PlayingMachine, user_info: &mut PlayingUser) {
     let result = std::env::var("SHELL").unwrap_or_default();
@@ -240,46 +244,84 @@ pub fn is_display_zero() -> bool {
     }
 }
 
-pub fn htb_machines_to_flypie<T: CommonTrait>(machine_list: Vec<T>) -> String {
+pub async fn htb_machines_to_flypie<T: CommonTrait>(
+    machine_list: Vec<T>,
+) -> String {
     let terminal = "gnome-terminal --";
-    let fly_new = machine_list
-        .iter()
-        .map(|machine| {
-            let home = env::var("HOME").unwrap();
-            let machine_name = &machine.get_name().split_once(' ').unwrap().1; //Remove the "[os icon] " from the machine name
-            let machine_avatar = &machine.get_avatar();
+    let shell = env::var("SHELL").unwrap();
+    let (sender, mut receiver) = mpsc::channel(machine_list.len());
 
-            let avatar_url = format!("https://www.hackthebox.com{}", machine_avatar);
-            let avatar_filename = format!(
-                "{}/.local/share/icons/hackthebox/avatar/{}.png",
-                home, machine_name
-            );
+    for machine in machine_list.iter() {
+        let home = env::var("HOME").unwrap();
+        let machine_name = machine.get_name().split_once(' ').unwrap().1;
+        let machine_avatar = machine.get_avatar().to_string();
+        let avatar_url = format!("https://www.hackthebox.com{}", machine_avatar);
 
-            let shell = env::var("SHELL").unwrap();
+        let avatar_filename = format!(
+            "{}/.local/share/icons/hackthebox/avatar/{}.png",
+            home, machine_name
+        );
 
-            let machine_command = format!(
-                "{} /usr/bin/bash -c 'htb-spawn {};'{}''",
-                terminal, machine_name, shell
-            );
+        let sender_clone = sender.clone();
 
-            let response = reqwest::blocking::get(avatar_url);
-            if let Ok(mut r) = response {
-                if r.status().is_success() {
-                    let mut image_data = Vec::new();
-                    r.copy_to(&mut image_data).unwrap();
-
-                    let mut avatar_file = File::create(&avatar_filename).unwrap();
-                    avatar_file.write_all(&image_data).unwrap();
-
-                    Command::new("convert")
-                        .args([&avatar_filename, "-resize", "200x", &avatar_filename])
-                        .status()
-                        .unwrap();
-                } else {
-                    println!("Image Couldn't be retrieved");
+        tokio::spawn(async move {
+            match Client::new().get(&avatar_url).send().await {
+                Ok(response) => {
+                    if response.status().is_success() {
+                        match response.bytes().await {
+                            Ok(image_data) => {
+                                match AsyncFile::create(&avatar_filename).await {
+                                    Ok(avatar_file) => {
+                                        let mut writer = BufWriter::new(avatar_file);
+                                        if let Err(err) = writer.write_all(&image_data).await {
+                                            eprintln!("Failed to write image data: {}", err);
+                                        } else {
+                                            println!("Sending: {:?}", avatar_filename);
+                                            if let Err(err) = sender_clone.send(avatar_filename).await {
+                                                eprintln!("Send error: {:?}", err);
+                                            }
+                                        }
+                                    }
+                                    Err(err) => {
+                                        eprintln!("Failed to create file: {:?}", err);
+                                    }
+                                }
+                            }
+                            Err(err) => {
+                                eprintln!("Failed to read image data: {:?}", err);
+                            }
+                        }
+                    } else {
+                        let status_code = response.status().as_u16();
+                        eprintln!(
+                            "Status: {}; Image couldn't be retrieved from {}",
+                            status_code, avatar_url
+                        );
+                    }
+                }
+                Err(err) => {
+                    eprintln!("HTTP request error: {:?}", err);
                 }
             }
+        });
+    }
+    
+    let mut avatar_filenames = Vec::new();
 
+    for _ in 0..machine_list.len() {
+        let received_avatar = receiver.recv().await.expect("Receive error");
+        println!("Received: {:?}", received_avatar);
+        avatar_filenames.push(received_avatar);
+    }
+    let fly_new = machine_list
+        .iter()
+        .zip(avatar_filenames.iter())
+        .map(|(machine, avatar_filename)| {
+            let machine_name = machine.get_name().split_once(' ').unwrap().1;
+            let machine_command = format!(
+                "{} /usr/bin/bash -c 'htb-toolkit -m {};'{}''",
+                terminal, machine_name, shell
+            );
             format!(
                 "{{\\\"name\\\":\\\"{}\\\",\\\"icon\\\":\\\"{}\\\",\\\"type\\\":\\\"Command\\\",\\\"data\\\":{{\\\"command\\\":\\\"{}\\\"}},\\\"angle\\\":-1}},",
                 machine_name, avatar_filename, machine_command
@@ -288,7 +330,7 @@ pub fn htb_machines_to_flypie<T: CommonTrait>(machine_list: Vec<T>) -> String {
         .collect::<Vec<_>>()
         .join("");
 
-    format!("[{}]", &fly_new[..fly_new.len() - 1]) // Return the dconf string with all free machines and delete the last character (, comma)
+    format!("[{}]", &fly_new[..fly_new.len() - 1])
 }
 
 pub fn add_hosts(machine_info: &PlayingMachine) -> Result<(), Box<dyn std::error::Error>> {

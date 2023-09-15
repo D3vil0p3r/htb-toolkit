@@ -6,9 +6,10 @@ use crate::utils::*;
 use crate::vpn::*;
 use std::env;
 use std::io::{self,Write};
-use reqwest::blocking::Client;
+use reqwest::Client;
 use serde::Serialize;
 use serde_json::json;
+use tokio::spawn;
 
 #[derive(Serialize)]
 struct ReviewData {
@@ -25,66 +26,85 @@ struct FlagData {
     difficulty: String,
 }
 
-pub fn play_machine(machine_name: &str) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn play_machine(machine_name: &str) -> Result<(), Box<dyn std::error::Error>> {
     let appkey = get_appkey();
+    let appkey_clone = appkey.clone(); // Clone the necessary data to avoid borrowed value error
     let htb_path = format!("{}/.htb.conf", env::var("HOME").unwrap());
     let htbconfig = HTBConfig::get_current_config(&htb_path);
 
-    let mut machine_info = PlayingMachine::get_machine(machine_name, &appkey);
+    let mut machine_info = PlayingMachine::get_machine(machine_name, &appkey).await;
 
     println!("Stopping any active machine...");
-    stop_machine();
+    stop_machine().await;
     
-    check_vpn(machine_info.sp_flag);    
+    check_vpn(machine_info.sp_flag).await;    
 
-    //For SP Machines and VIP VPN (not Free VPN)
-    let client = Client::new();
-    let response = client
-        .post("https://www.hackthebox.com/api/v4/vm/spawn")
-        .json(&json!({
-            "machine_id": machine_info.machine.id
-        }))
-        .header("Content-Type", "application/json")
-        .header("Authorization", format!("Bearer {}", appkey))
-        .send()?;
-
-    // Check if the response was successful
-    let status_code = response.status();
-    if status_code.is_success() {
-        /*let response_text = response.text()?;
-        println!("Response: {}", response_text);*/
-    } else if status_code.as_u16() == 400 {
-        //println!("Request failed with status: {}", status_code);
-        // For Free VPN
+    let blocking_task = spawn(async move {
+        //For SP Machines and VIP VPN (not Free VPN)
         let client = Client::new();
-        let post_req = format!("https://www.hackthebox.com/api/v4/machine/play/{}", machine_info.machine.id);
-        let response_play = client
-            .post(post_req)
+        let response_result = client
+            .post("https://www.hackthebox.com/api/v4/vm/spawn")
+            .json(&json!({
+                "machine_id": machine_info.machine.id
+            }))
+            .header("Content-Type", "application/json")
             .header("Authorization", format!("Bearer {}", appkey))
-            .send()?;
+            .send()
+            .await;
         
-        // Check if the response was successful
-        let status_code_play = response_play.status();
-        if status_code_play.is_success() {
-            let response_text = response_play.text()?;
-            println!("Response: {}", response_text);
-        } else {
-            let response_text = response_play.text()?;
-            
-            println!("Response: {}", response_text);
-            println!("Request failed with status: {}", status_code_play);
+        match response_result {
+            Ok(response) => {
+                let response_status = response.status();
+                if response_status.is_success() {
+                    let message = response.text().await.expect("Failed to get response text");
+                    println!("{}{}{}", BGREEN, message, RESET);
+                } else if response_status.as_u16() == 400 {
+                    // For Free VPN
+                    let post_req = format!("https://www.hackthebox.com/api/v4/machine/play/{}", machine_info.machine.id);
+                    let response_play = client
+                        .post(post_req)
+                        .header("Authorization", format!("Bearer {}", appkey))
+                        .send()
+                        .await;
+                    
+                    match response_play {
+                        Ok(subresponse) => {
+                            let subresponse_status = subresponse.status();
+                            if subresponse_status.is_success() {
+                                let subresponse_text = subresponse.text().await.expect("Failed to get response text");
+                                println!("Response: {}", subresponse_text);
+                            } else {
+                                let subresponse_text = subresponse.text().await.expect("Failed to get response text");
+                                println!("Response: {}", subresponse_text);
+                                eprintln!("Request failed with status: {}", subresponse_status);
+                                std::process::exit(1);
+                            }
+                        }
+                        Err(err) => {
+                            eprintln!("Error on POST request: {:?}", err);
+                        }
+                    }
+                } else {
+                    let response_text = response.text().await.expect("Failed to get response text");
+                    println!("Response: {}", response_text);
+                    eprintln!("Request failed with status: {}", response_status);
+                    std::process::exit(1);
+                }
+            }
+            Err(err) => {
+                eprintln!("Error on POST request: {:?}", err);
+            }
         }
-    } else {
-        let response_text = response.text()?;
-        println!("Response: {}", response_text);
-        println!("Request failed with status: {}", status_code);
-    }
+    });
+
+    // Await the result of the blocking task
+    blocking_task.await.expect("Blocking task failed");
 
     if machine_info.ip.is_empty() { //Starting Point case because SP IP address is assigned only after spawn of the machine
-        machine_info.ip = get_ip(&appkey);
+        machine_info.ip = get_ip(&appkey_clone).await;
     }
-    
-    let mut user_info = PlayingUser::get_playinguser(&appkey); // Before this it is needed to run HTB VPN to take the Attacker IP address
+
+    let mut user_info = PlayingUser::get_playinguser(&appkey_clone).await; // Before this it is needed to run HTB VPN to take the Attacker IP address
 
     let _ = print_banner();
 
@@ -108,8 +128,9 @@ pub fn play_machine(machine_name: &str) -> Result<(), Box<dyn std::error::Error>
     Ok(())
 }
 
-pub fn submit_flag() {
+pub async fn submit_flag() {
     let appkey = get_appkey();
+    let appkey_clone = appkey.clone(); // Clone the necessary data to avoid borrowed value error
     let mut flag = String::new();
     let mut machine_name = String::new();
     let mut machine_rating = String::new();
@@ -128,7 +149,7 @@ pub fn submit_flag() {
         .read_line(&mut machine_name)
         .expect("Failed to read line");
 
-    let machine_info = PlayingMachine::get_machine(&machine_name, &appkey);
+    let machine_info = PlayingMachine::get_machine(&machine_name, &appkey).await;
 
     println!("{}How much is the difficulty of this machine?{}", BCYAN, RESET);
     println!();
@@ -151,49 +172,54 @@ pub fn submit_flag() {
         .read_line(&mut machine_rating)
         .expect("Failed to read line");
 
-    let flag_data = FlagData {
-        flag: flag.trim().to_string(),
-        id: machine_info.machine.id,
-        difficulty: machine_rating.trim().to_string(),
-    };
+    let blocking_task = spawn(async move {
+        let flag_data = FlagData {
+            flag: flag.trim().to_string(),
+            id: machine_info.machine.id,
+            difficulty: machine_rating.trim().to_string(),
+        };
 
-    // Create a reqwest client
-    let client = Client::new();
+        // Create a reqwest client
+        let client = Client::new();
 
-    // Send the POST request to submit the flag
-    let response = client
-        .post("https://www.hackthebox.com/api/v4/machine/own")
-        .json(&flag_data)
-        .header("Content-Type", "application/json")
-        .header("Authorization", format!("Bearer {}", appkey))
-        .send();
+        // Send the POST request to submit the flag
+        let response = client
+            .post("https://www.hackthebox.com/api/v4/machine/own")
+            .json(&flag_data)
+            .header("Content-Type", "application/json")
+            .header("Authorization", format!("Bearer {}", appkey))
+            .send();
   
-    match response {
-        Ok(resp) => {
-            let status = resp.status();
-            if status.is_success() {
-                // Print the response text
-                let response_text = resp.text().expect("Failed to read response text");
-                println!("{}", response_text);
-            } else {
-                // Status 400: Incorrect flag
-                let response_text = resp.text().expect("Failed to read response text");
-                let parsed_response: Result<serde_json::Value, _> = serde_json::from_str(&response_text);
-
-                if let Ok(json) = parsed_response {
-                    if let Some(message) = json.get("message").and_then(|m| m.as_str()) {
-                        println!("{}", message);
-                    }
+        match response.await {
+            Ok(resp) => {
+                let status = resp.status();
+                if status.is_success() {
+                    // Print the response text
+                    let response_text = resp.text().await.expect("Failed to read response text");
+                    println!("{}", response_text);
                 } else {
-                    eprintln!("Request failed with status: {}", status);
-                    std::process::exit(1);
+                    // Status 400: Incorrect flag
+                    let response_text = resp.text().await.expect("Failed to read response text");
+                    let parsed_response: Result<serde_json::Value, _> = serde_json::from_str(&response_text);
+
+                    if let Ok(json) = parsed_response {
+                        if let Some(message) = json.get("message").and_then(|m| m.as_str()) {
+                            println!("{}", message);
+                        }
+                    } else {
+                        eprintln!("Request failed with status: {}", status);
+                        std::process::exit(1);
+                    }
                 }
             }
+            Err(err) => {
+                eprintln!("Error sending request: {}", err);
+            }
         }
-        Err(err) => {
-            eprintln!("Error sending request: {}", err);
-        }
-    }
+    });
+
+    // Await the result of the blocking task
+    blocking_task.await.expect("Blocking task failed");
 
     if machine_info.machine.user_pwn != "null" && machine_info.machine.root_pwn != "null" && machine_info.review {
         println!("{}Wonderful! You PWNED {}! Would you like to submit feedback?{}", BYELLOW, machine_info.machine.name, RESET);
@@ -240,12 +266,13 @@ pub fn submit_flag() {
                         .post("https://www.hackthebox.com/api/v4/machine/review")
                         .json(&review_data)
                         .header("Content-Type", "application/json")
-                        .header("Authorization", format!("Bearer {}", appkey))
+                        .header("Authorization", format!("Bearer {}", appkey_clone))
                         .send()
+                        .await
                         .expect("Failed to send request");
     
                     if response.status().is_success() {
-                        let message: serde_json::Value = response.json().expect("Failed to parse JSON");
+                        let message: serde_json::Value = response.json().await.expect("Failed to parse JSON");
                         println!("{}", message["message"]);
                     } else {
                         println!("Request failed with status: {}", response.status());

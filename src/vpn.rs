@@ -1,4 +1,4 @@
-use crate::api::fetch_api;
+use crate::api::fetch_api_async;
 use crate::appkey::get_appkey;
 use crate::colors::*;
 use crate::utils::*;
@@ -8,8 +8,9 @@ use std::io::{self, Write};
 use std::process::Command;
 use std::thread;
 use std::time::Duration;
-
+use reqwest::Client;
 use serde_json::Value;
+use tokio::spawn;
 
 pub fn print_vpn_sp_list() {
     println!("{}┌────────────────────────────────────────────────────┐{}", BCYAN, RESET);
@@ -31,12 +32,12 @@ pub fn print_vpn_machine_list() {
     println!("{}└────────────────────────────────────────────────────┘{}", RED, RESET);
 }
 
-fn vpn_type() -> Option<Vec<String>> {
+async fn vpn_type() -> Option<Vec<String>> {
     let appkey = get_appkey();
-    let result = fetch_api("https://www.hackthebox.com/api/v4/connection/status", &appkey);
+    let result = fetch_api_async("https://www.hackthebox.com/api/v4/connection/status", &appkey);
     let mut vpntype: Vec<String> = Vec::new();
 
-    match result {
+    match result.await {
         Ok(json_value) => {
             if let Some(json_vpn) = json_value.as_array() {
                 for item in json_vpn {
@@ -67,9 +68,9 @@ fn vpn_type() -> Option<Vec<String>> {
     }
 }
 
-pub fn check_vpn(machine_spflag: bool) {
+pub async fn check_vpn(machine_spflag: bool) {
     let mut vpn = String::new();
-    if let Some(vpntypes) = vpn_type() {
+    if let Some(vpntypes) = vpn_type().await {
         let vpntypes_str = vpntypes.join(", "); // Join the VPN types with a comma and space. Note that if we switch two different VPNs, they can still leave together for some time
         let mut yn = String::new();
         if vpntypes.len() > 1 {
@@ -100,7 +101,7 @@ pub fn check_vpn(machine_spflag: bool) {
                     io::stdin()
                         .read_line(&mut vpn)
                         .expect("Failed to read line");
-                    run_vpn(&vpn);
+                    run_vpn(&vpn).await;
                     break;
                 }
                 "n" | "N" => break,
@@ -119,11 +120,11 @@ pub fn check_vpn(machine_spflag: bool) {
         io::stdin()
             .read_line(&mut vpn)
             .expect("Failed to read line");
-        run_vpn(&vpn);
+        run_vpn(&vpn).await;
     }
 }
 
-pub fn run_vpn(chosen_server: &str) {
+pub async fn run_vpn(chosen_server: &str) {
 
     let appkey = get_appkey();
     
@@ -261,75 +262,82 @@ pub fn run_vpn(chosen_server: &str) {
         .expect("Failed to execute command");
 
     let switch_url = format!("https://www.hackthebox.com/api/v4/connections/servers/switch/{}", vpn_id);
-    let client = reqwest::blocking::Client::new();
-    let response = client
-        .post(switch_url)
-        .header("Authorization", format!("Bearer {}", appkey))
-        .send();
+    let blocking_task = spawn(async move {
+        let client = Client::new();
+        let response = client
+            .post(switch_url)
+            .header("Authorization", format!("Bearer {}", appkey))
+            .send()
+            .await;
 
-    match response {
-        Ok(response) => {
-            if response.status().is_success() {
-                let response_text = response.text().unwrap();
-                let response_json: Value = serde_json::from_str(&response_text).unwrap();
-                let message = response_json["message"].as_str().unwrap();
-                println!("Switch response: {}", message);
-            } else {
-                eprintln!("API call failed with status: {}", response.status());
-                std::process::exit(1);
-            }
-        }
-        Err(err) => {
-            eprintln!("API call error: {:?}", err);
-            std::process::exit(1);
-        }
-    }
-
-    let ovpn_url = format!(
-        "https://www.hackthebox.com/api/v4/access/ovpnfile/{}{}",
-        vpn_id, vpn_tcp
-    );
-    let ovpn_response = client
-        .get(ovpn_url)
-        .header("Authorization", format!("Bearer {}", appkey))
-        .send();
-
-    match ovpn_response {
-        Ok(response) => {
-            if response.status().is_success() {
-                let ovpn_content = response.text().unwrap();
-                let ovpn_file_path = format!("{}/lab-vpn.ovpn", std::env::var("HOME").unwrap_or_default());
-                // Write content to a file named "lab-vpn.ovpn"
-                if let Err(err) = fs::write(&ovpn_file_path, ovpn_content) {
-                    eprintln!("Error writing to file: {}", err);
+        match response {
+            Ok(response) => {
+                if response.status().is_success() {
+                    let response_text = response.text().await.unwrap();
+                    let response_json: Value = serde_json::from_str(&response_text).unwrap();
+                    let message = response_json["message"].as_str().unwrap();
+                    println!("Switch response: {}", message);
                 } else {
-                    println!("File saved successfully.");
-                }
-
-                let mut openvpn_cmd = Command::new("sudo");
-                openvpn_cmd
-                    .arg("openvpn")
-                    .arg("--config")
-                    .arg(ovpn_file_path)
-                    .arg("--daemon");
-
-                let status = openvpn_cmd.status().expect("Failed to execute openvpn command");
-                if status.success() {
-                    println!("OpenVPN started successfully");
-                } else {
-                    eprintln!("OpenVPN process exited with error: {:?}", status);
+                    eprintln!("API call failed with status: {}", response.status());
                     std::process::exit(1);
                 }
-            } else {
-                eprintln!("API call failed with status: {}", response.status());
+            }
+            Err(err) => {
+                eprintln!("API call error: {:?}", err);
                 std::process::exit(1);
             }
         }
-        Err(err) => {
-            eprintln!("API call error: {:?}", err);
-            std::process::exit(1);
+
+        let ovpn_url = format!(
+            "https://www.hackthebox.com/api/v4/access/ovpnfile/{}{}",
+            vpn_id, vpn_tcp
+        );
+        let ovpn_response = client
+            .get(ovpn_url)
+            .header("Authorization", format!("Bearer {}", appkey))
+            .send()
+            .await;
+
+        match ovpn_response {
+            Ok(response) => {
+                if response.status().is_success() {
+                    let ovpn_content = response.text().await.unwrap();
+                    let ovpn_file_path = format!("{}/lab-vpn.ovpn", std::env::var("HOME").unwrap_or_default());
+                    // Write content to a file named "lab-vpn.ovpn"
+                    if let Err(err) = fs::write(&ovpn_file_path, ovpn_content) {
+                        eprintln!("Error writing to file: {}", err);
+                    } else {
+                        println!("File saved successfully.");
+                    }
+
+                    let mut openvpn_cmd = Command::new("sudo");
+                    openvpn_cmd
+                        .arg("openvpn")
+                        .arg("--config")
+                        .arg(ovpn_file_path)
+                        .arg("--daemon");
+
+                    let status = openvpn_cmd.status().expect("Failed to execute openvpn command");
+                    if status.success() {
+                        println!("OpenVPN started successfully");
+                    } else {
+                        eprintln!("OpenVPN process exited with error: {:?}", status);
+                        std::process::exit(1);
+                    }
+                } else {
+                    eprintln!("API call failed with status: {}", response.status());
+                    std::process::exit(1);
+                }
+            }
+            Err(err) => {
+                eprintln!("API call error: {:?}", err);
+                std::process::exit(1);
+            }
         }
-    }
+    });
+
+    // Await the result of the blocking task
+    blocking_task.await.expect("Blocking task failed");
 
     thread::sleep(Duration::from_secs(5));
 
