@@ -276,7 +276,7 @@ pub async fn htb_machines_to_flypie<T: CommonTrait>(
                                         if let Err(err) = writer.write_all(&image_data).await {
                                             eprintln!("Failed to write image data: {}", err);
                                         } else {
-                                            println!("Sending: {:?}", avatar_filename);
+                                            //println!("Sending: {:?}", avatar_filename);
                                             if let Err(err) = sender_clone.send(avatar_filename).await {
                                                 eprintln!("Send error: {:?}", err);
                                             }
@@ -310,7 +310,7 @@ pub async fn htb_machines_to_flypie<T: CommonTrait>(
 
     for _ in 0..machine_list.len() {
         let received_avatar = receiver.recv().await.expect("Receive error");
-        println!("Received: {:?}", received_avatar);
+        //println!("Received: {:?}", received_avatar);
         avatar_filenames.push(received_avatar);
     }
     let fly_new = machine_list
