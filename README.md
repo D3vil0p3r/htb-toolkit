@@ -38,11 +38,15 @@ Install the following runtime dependencies:
 
 **Arch-based Distros**
 ```
-coreutils gzip imagemagick libsecret noto-fonts-emoji openssl openvpn
+coreutils gzip imagemagick libsecret noto-fonts-emoji openssl openvpn ttf-nerd-fonts-symbols
 ```
 **Debian-based Distros**
 ```
 coreutils fonts-noto-color-emoji gzip imagemagick libsecret-tools libssl-dev openvpn
+
+wget https://github.com/ryanoasis/nerd-fonts/releases/download/latest/NerdFontsSymbolsOnly.zip
+unzip NerdFontsSymbolsOnly.zip -x LICENSE readme.md -d ~/.fonts
+fc-cache -fv
 ```
 Install the following build dependencies:
 ```
