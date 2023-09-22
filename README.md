@@ -38,11 +38,11 @@ Install the following runtime dependencies:
 
 **Arch-based Distros**
 ```
-coreutils libsecret openssl gzip imagemagick openvpn
+coreutils gzip imagemagick libsecret noto-fonts-emoji openssl openvpn
 ```
 **Debian-based Distros**
 ```
-coreutils libsecret-tools libssl-dev gzip imagemagick openvpn
+coreutils fonts-noto-color-emoji gzip imagemagick libsecret-tools libssl-dev openvpn
 ```
 Install the following build dependencies:
 ```
