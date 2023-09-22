@@ -28,7 +28,7 @@ pub fn print_vpn_machine_list() {
     println!("{}|                           USVIP1 to USVIP27        |{}", BYELLOW, RESET);
     println!("{}|                           SGVIP1 SGVIP2 AUVIP1     |{}", BYELLOW, RESET);
     println!("{}| Machines VIP+ VPN       : EUVIP+1 EUVIP+2          |{}", RED, RESET);
-    println!("{}| Machines VIP+ VPN       : USVIP+1 SGVIP+1          |{}", RED, RESET);
+    println!("{}|                         : USVIP+1 SGVIP+1          |{}", RED, RESET);
     println!("{}└────────────────────────────────────────────────────┘{}", RED, RESET);
 }
 

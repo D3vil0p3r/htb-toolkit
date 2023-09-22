@@ -11,6 +11,8 @@ pub async fn get_ip (appkey: &str) -> String {
 
     let result = fetch_api_async(call_api, appkey);
     let mut machine_ip = String::new();
+
+    let account = User::get_user(appkey).await;
         
     //println!("Result: {:?}", result); // DEBUG: Print the result before the match
 
@@ -24,14 +26,25 @@ pub async fn get_ip (appkey: &str) -> String {
                     return machine_ip;
                 }
                 if let Some(type_value) = info.get("type").and_then(|t| t.as_str()) {
-                    if type_value.contains("Starting Point") {
-                        let get_req = format!(
-                            "https://www.hackthebox.com/api/v4/sp/profile/{}",
-                            &json_data["info"]["id"]
-                        );
+
+                    if type_value.contains("Starting Point") || account.vpnname.contains("VIP") { //If the machine is Starting Point type or if you are using a VIP or VIP+ VPN, the machine needs some min to generate the IP address (even if the machine is free)
+                        let mut get_req = String::new();
+                        if type_value.contains("Starting Point") {
+                            get_req = format!(                        
+                                "https://www.hackthebox.com/api/v4/sp/profile/{}",                        
+                                &json_data["info"]["id"]
+                            );
+                        }
+                        else if account.vpnname.contains("VIP") {
+                            get_req = format!(                        
+                                "https://www.hackthebox.com/api/v4/machine/profile/{}",                        
+                                &json_data["info"]["name"].as_str().unwrap()
+                            );
+                        }
 
                         loop {
                             let sub_result = fetch_api_async(&get_req, appkey);
+
                             match sub_result.await {
                                 Ok(sub_json) => {
                                     machine_ip = sub_json["info"]["ip"].as_str().unwrap_or_default().to_string();
@@ -54,7 +67,9 @@ pub async fn get_ip (appkey: &str) -> String {
                         }
                     }
                     else {
-                        machine_ip = json_data["info"]["ip"].as_str().unwrap_or_default().to_string();
+                        let machine_name = info.get("name").and_then(|t| t.as_str()).expect("Machine name not found").to_string();
+                        let machine_info = PlayingMachine::get_machine(&machine_name, appkey).await;
+                        machine_ip = machine_info.ip;
                         return machine_ip;
                     }
                 }

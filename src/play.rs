@@ -31,12 +31,13 @@ pub async fn play_machine(machine_name: &str) -> Result<(), Box<dyn std::error::
     let appkey_clone = appkey.clone(); // Clone the necessary data to avoid borrowed value error
     let htb_path = format!("{}/.htb.conf", env::var("HOME").unwrap());
     let htbconfig = HTBConfig::get_current_config(&htb_path);
-
+    
     let mut machine_info = PlayingMachine::get_machine(machine_name, &appkey).await;
 
     println!("Stopping any active machine...");
+    println!("{}Note: if you interrupted the htb-toolkit before the spawn of a previous machine, give me two minutes to end the old spawn process and stop the related machine...{}", BYELLOW, RESET);
     stop_machine().await;
-    
+
     check_vpn(machine_info.sp_flag).await;    
 
     let blocking_task = spawn(async move {
@@ -99,10 +100,8 @@ pub async fn play_machine(machine_name: &str) -> Result<(), Box<dyn std::error::
 
     // Await the result of the blocking task
     blocking_task.await.expect("Blocking task failed");
-
-    if machine_info.ip.is_empty() { //Starting Point case because SP IP address is assigned only after spawn of the machine
-        machine_info.ip = get_ip(&appkey_clone).await;
-    }
+    
+    machine_info.ip = get_ip(&appkey_clone).await; // For Starting Point machines and VIP and VIP+ VPNs, if I call the play API two times on the same machine, the old IP address associated to the machine can still live for some seconds providing a wrong IP related to the new same machine. For this reason, it is better to compute always the IP address (no problems for free VPNs because they associate always the same IP address to the same machine)
 
     let mut user_info = PlayingUser::get_playinguser(&appkey_clone).await; // Before this it is needed to run HTB VPN to take the Attacker IP address
 

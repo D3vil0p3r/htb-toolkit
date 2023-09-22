@@ -100,34 +100,36 @@ pub async fn stop_machine() {
     let account = User::get_user(&appkey).await;
     let machine_type = active_machine.mtype;
 
-    let post_req:  String = if machine_type.contains("Starting Point") || account.vpnname.contains("VIP") { //If you are using a VIP VPN, the machine can be stopped only by api/v4/vm/terminate API (even if the machine is free)
-        String::from("https://www.hackthebox.com/api/v4/vm/terminate")
-    }
-    else {
-        String::from("https://www.hackthebox.com/api/v4/machine/stop")
-    };
+    if !active_machine_clone.name.is_empty() { //If there is an active machine, stop it
+        let post_req:  String = if machine_type.contains("Starting Point") || (account.vpnname.contains("VIP") ) { //If you are using a VIP or VIP+ VPN, the machine can be stopped only by api/v4/vm/terminate API (even if the machine is free)
+            String::from("https://www.hackthebox.com/api/v4/vm/terminate")
+        }
+        else {
+            String::from("https://www.hackthebox.com/api/v4/machine/stop")
+        };
 
-    let blocking_task = spawn(async move {
-        let client = Client::new();
-        let stop_data = serde_json::json!({"machine_id": active_machine_clone.id});
-        let stop_response = client
-            .post(post_req)
-            .header("Authorization", format!("Bearer {}", appkey_clone))
-            .json(&stop_data)
-            .send()
-            .await
-            .expect("Error on POST request.");
-        
-        let stop_message = stop_response.json::<serde_json::Value>().await.expect("Failed to parse JSON response.");
-        let stop_message = stop_message.get("message").unwrap_or(&serde_json::Value::Null).as_str().unwrap();
-        println!("{}{}{}", BGREEN, stop_message, RESET);
-    });
+        let blocking_task = spawn(async move {
+            let client = Client::new();
+            let stop_data = serde_json::json!({"machine_id": active_machine_clone.id});
+            let stop_response = client
+                .post(post_req)
+                .header("Authorization", format!("Bearer {}", appkey_clone))
+                .json(&stop_data)
+                .send()
+                .await
+                .expect("Error on POST request.");
 
-    // Await the result of the blocking task
-    blocking_task.await.expect("Blocking task failed");
+            let stop_message = stop_response.json::<serde_json::Value>().await.expect("Failed to parse JSON response.");
+            let stop_message = stop_message.get("message").unwrap_or(&serde_json::Value::Null).as_str().unwrap();
+            println!("{}{}{}", BGREEN, stop_message, RESET);
+        });
 
-    if htbconfig.promptchange { //If the prompt is set to change during the playing, when you stop the machine, it should restore the original shell
-        restore_shell();
+        // Await the result of the blocking task
+        blocking_task.await.expect("Blocking task failed");
+
+        if htbconfig.promptchange { //If the prompt is set to change during the playing, when you stop the machine, it should restore the original shell
+            restore_shell();
+        }
     }
 }
 

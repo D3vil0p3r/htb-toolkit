@@ -373,17 +373,21 @@ pub fn add_hosts(machine_info: &PlayingMachine) -> Result<(), Box<dyn std::error
                     let current_content = fs::read_to_string(hosts_path)?;
                     let new_entry = format!("{} {}", machine_info.ip, ans);
                     
-                    // Check if the new entry already exists in the hosts file
-                    if !current_content.contains(&new_entry) {
-                        let sed_pattern = format!("2i{}", new_entry);
+                    // Check if the new entry already exists in the hosts file. If so, remove it because it could be placed at bottom than a more recent (and wrong) one
+                    if current_content.contains(&new_entry) {
+                        println!("Hosts file already contains the new entry. Removing old entry...");
+                        let sed_remove_pattern = format!("/{}/d", new_entry);
+
                         std::process::Command::new("sudo")
-                            .args(["sed", "-i", &sed_pattern, "/etc/hosts"])
+                            .args(["sed", "-i", &sed_remove_pattern, "/etc/hosts"])
                             .status()
-                            .expect("Failed to copy hosts file");
+                            .expect("Failed to edit hosts file");
                     }
-                    else {
-                        println!("Hosts file already contains the new entry.");
-                    }
+                    let sed_pattern = format!("2i{}", new_entry);
+                    std::process::Command::new("sudo")
+                        .args(["sed", "-i", &sed_pattern, "/etc/hosts"])
+                        .status()
+                        .expect("Failed to edit hosts file");
                 }
                 return Ok(());
             }
