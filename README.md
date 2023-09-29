@@ -44,7 +44,7 @@ coreutils gzip imagemagick libsecret noto-fonts-emoji openssl openvpn ttf-nerd-f
 ```
 coreutils fonts-noto-color-emoji gzip imagemagick libsecret-tools libssl-dev openvpn
 
-wget https://github.com/ryanoasis/nerd-fonts/releases/download/latest/NerdFontsSymbolsOnly.zip
+wget https://github.com/ryanoasis/nerd-fonts/releases/latest/download/NerdFontsSymbolsOnly.zip
 unzip NerdFontsSymbolsOnly.zip -x LICENSE readme.md -d ~/.fonts
 fc-cache -fv
 ```
