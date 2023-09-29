@@ -36,11 +36,11 @@ sudo pacman -S htb-toolkit
 ## Non-Arch-based Linux distro
 Install the following runtime dependencies:
 
-**Arch-based Distros**
+**Arch-based distros**
 ```
 coreutils gzip imagemagick libsecret noto-fonts-emoji openssl openvpn ttf-nerd-fonts-symbols
 ```
-**Debian-based Distros**
+**Debian-based distros**
 ```
 coreutils fonts-noto-color-emoji gzip imagemagick libsecret-tools libssl-dev openvpn
 
