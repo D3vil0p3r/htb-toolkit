@@ -38,11 +38,11 @@ Install the following runtime dependencies:
 
 **Arch-based distros**
 ```
-coreutils gzip imagemagick libsecret noto-fonts-emoji openssl openvpn ttf-nerd-fonts-symbols
+coreutils gnome-keyring gzip imagemagick libsecret noto-fonts-emoji openssl openvpn ttf-nerd-fonts-symbols
 ```
 **Debian-based distros**
 ```
-coreutils fonts-noto-color-emoji gzip imagemagick libsecret-tools libssl-dev openvpn
+coreutils fonts-noto-color-emoji gnome-keyring gzip imagemagick libsecret-tools libssl-dev openvpn
 
 wget https://github.com/ryanoasis/nerd-fonts/releases/latest/download/NerdFontsSymbolsOnly.zip
 unzip NerdFontsSymbolsOnly.zip -x LICENSE readme.md -d ~/.fonts
