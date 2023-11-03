@@ -58,7 +58,7 @@ end"#,
         file_bak = format!("{}/.zshrc.htb.bak", std::env::var("HOME").unwrap_or_default());
         file = format!("{}/.zshrc", std::env::var("HOME").unwrap_or_default());
         prompt = format!(
-            "PROMPT=\"%F{{46}}┌──[Target:{}🚀🌐IP:{}🔥%F{{201}}Attacker:{}📡IP:{}%F{{46}}Prize:{} points]\"$'\\n'\"└──╼[👾]%F{{44}}%~ $%f \"" ,
+            "PROMPT=\"%F{{46}}┌──[Target:{}🚀🌐IP:{}🔥%F{{201}}Attacker:{}📡IP:{}%F{{46}}🏅Prize:{} points]\"$'\\n'\"└──╼[👾]%F{{44}}%~ $%f \"" ,
             machine_info.machine.name,
             machine_info.ip,
             user_info.user.name,
