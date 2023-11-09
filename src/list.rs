@@ -78,7 +78,7 @@ pub async fn list_machines(machine_type: &str) -> Vec<Machine> {
 
             println!("\x1B[92mDone.\x1B[0m\n");
 
-            for (sequence, entry) in json_data["info"].as_array().unwrap().iter().enumerate() {
+            for (sequence, entry) in json_data["data"].as_array().unwrap().iter().enumerate() {
                 let index = sequence;
 
                 let id = entry["id"].as_u64().unwrap_or(0);
@@ -117,7 +117,7 @@ pub async fn list_machines(machine_type: &str) -> Vec<Machine> {
                 println!("\x1B[92mToday, the free retired machines are:\x1B[0m\n");
 
                 for index in array_index_free_machines {
-                    let name = json_data["info"][index]["name"].as_str().unwrap();
+                    let name = json_data["data"][index]["name"].as_str().unwrap();
                     println!("{}", name);
                 }
             }
