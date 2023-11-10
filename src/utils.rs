@@ -383,7 +383,7 @@ pub fn add_hosts(machine_info: &PlayingMachine) -> Result<(), Box<dyn std::error
                             .status()
                             .expect("Failed to edit hosts file");
                     }
-                    let sed_pattern = format!("2i{}", new_entry);
+                    let sed_pattern = format!("1i{}", new_entry);
                     std::process::Command::new("sudo")
                         .args(["sed", "-i", &sed_pattern, "/etc/hosts"])
                         .status()
