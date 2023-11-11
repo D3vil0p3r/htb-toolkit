@@ -58,69 +58,144 @@ pub async fn list_machines(machine_type: &str) -> Vec<Machine> {
     println!("\n\x1B[93mConnecting to HTB server...\x1B[0m\n");
 
     let appkey = get_appkey(); // Retrieve the app key
+    let mut last_page: u64 = 1;
 
-    let result = match machine_type {
-        "free" => fetch_api_async("https://www.hackthebox.com/api/v4/machine/paginated", &appkey),
-        "retired" => fetch_api_async("https://www.hackthebox.com/api/v4/machine/list/retired/paginated", &appkey),
+    let result: Result<serde_json::Value, reqwest::Error> = match machine_type {
+        "free" => fetch_api_async("https://www.hackthebox.com/api/v4/machine/paginated", &appkey).await,
+        "retired" => {
+            let url = "https://www.hackthebox.com/api/v4/machine/list/retired/paginated";
+            let mut result_list: Vec<serde_json::Value> = Vec::new();
+            let last_page_req = fetch_api_async(&url, &appkey).await;
+            
+            if let Ok(json_meta) = last_page_req {
+                //println!("Received JSON from retired call (page {}): {:?}", page_number, json_value);
+                last_page = json_meta["meta"]["last_page"].as_u64().unwrap();
+                //println!("{}", last_page);
+            } else {
+                eprintln!("Error fetching data for last page {}", last_page);
+            }
+
+            for page_number in 1..=last_page {
+                let url = format!(
+                    "https://www.hackthebox.com/api/v4/machine/list/retired/paginated?page={}",
+                    page_number
+                );
+                let page_result = fetch_api_async(&url, &appkey).await;
+
+                // If the current call is successful, append the result to the list
+                if let Ok(json_value) = page_result {
+                    //println!("Received JSON from retired call (page {}): {:?}", page_number, json_value);
+                    result_list.push(json_value);
+                } else {
+                    eprintln!("Error fetching data for page {}", page_number);
+                }
+            }
+
+            /*// Concatenate the JSON representations into a single string
+            let concatenated_json = result_list
+                .into_iter()
+                .map(|value| value)
+                .collect::<serde_json::Value>();
+            
+                    // Parse the JSON string into a serde_json::Value
+            //println!("{}", concatenated_json[0]);
+            //println!("{:?}", serde_json::from_str::<serde_json::Value>(&concatenated_json));
+            Ok(concatenated_json)*/
+
+            //Ok(serde_json::Value::String(concatenated_json))
+            Ok(serde_json::Value::Array(result_list.into_iter().map(serde_json::Value::from).collect()))
+        },
         _ => {
             eprintln!("\x1B[31mInvalid machine type: {}\x1B[0m", machine_type);
             return machine_list;
         }
     };
     
-    match result.await {
+    match result {
         Ok(json_data) => {
+            //println!("Received JSON from retired call: {}", json_data[1]);
             println!("\x1B[92mDone.\x1B[0m\n");
             println!("\x1B[93mCalculating the number of machines...\x1B[0m\n");
             std::thread::sleep(std::time::Duration::from_secs(1));
 
-            let mut array_index_free_machines = Vec::new();
-
-            println!("\x1B[92mDone.\x1B[0m\n");
-
-            for (sequence, entry) in json_data["data"].as_array().unwrap().iter().enumerate() {
-                let index = sequence;
-
-                let id = entry["id"].as_u64().unwrap_or(0);
-                let name = entry["name"].as_str().unwrap_or("Name not available").to_string();
-                let os = entry["os"].as_str().unwrap_or("OS not available").to_string();
-                let machine_name_os_icon = PlayingMachine::get_os_icon(name, &os, "left");
-                let points = entry["points"].as_u64().unwrap_or(0);
-                let difficulty_str = entry["difficultyText"].as_str().unwrap_or("Difficulty not available").to_string();
-                let user_pwn = entry["authUserInUserOwns"].to_string();
-                let root_pwn = entry["authUserInRootOwns"].to_string();
-                let free = entry["free"].as_bool().unwrap_or(false);
-                let avatar_path = entry["avatar"].as_str().unwrap_or("Avatar not available").to_string();
-
-                if free && machine_type == "retired" {
-                    array_index_free_machines.push(index);
-                }
-
-                let machine = Machine {
-                    id,
-                    name: machine_name_os_icon,
-                    points,
-                    difficulty_str,
-                    user_pwn,
-                    root_pwn,
-                    free,
-                    avatar: avatar_path,
-                };
-
-                machine_list.push(machine);
+            let mut array_free_machines: Vec<Vec<String>> = Vec::new();
+            for _ in 0..last_page as usize {
+                array_free_machines.push(Vec::new());
             }
 
-            display_table(&machine_list);
-
+            println!("\x1B[92mDone.\x1B[0m\n");
             if machine_type == "retired" {
+                for page_number in 1..=last_page as usize {
+                    for entry in json_data[page_number-1]["data"].as_array().unwrap().iter() {
+
+                        let id = entry["id"].as_u64().unwrap_or(0);
+                        let name = entry["name"].as_str().unwrap_or("Name not available").to_string();
+                        let os = entry["os"].as_str().unwrap_or("OS not available").to_string();
+                        let machine_name_os_icon = PlayingMachine::get_os_icon(name.clone(), &os, "left");
+                        let points = entry["points"].as_u64().unwrap_or(0);
+                        let difficulty_str = entry["difficultyText"].as_str().unwrap_or("Difficulty not available").to_string();
+                        let user_pwn = entry["authUserInUserOwns"].to_string();
+                        let root_pwn = entry["authUserInRootOwns"].to_string();
+                        let free = entry["free"].as_bool().unwrap_or(false);
+                        let avatar_path = entry["avatar"].as_str().unwrap_or("Avatar not available").to_string();
+
+                        if free {
+                            array_free_machines[page_number-1].push(name);
+                        }
+
+                        let machine = Machine {
+                            id,
+                            name: machine_name_os_icon,
+                            points,
+                            difficulty_str,
+                            user_pwn,
+                            root_pwn,
+                            free,
+                            avatar: avatar_path,
+                        };
+
+                        machine_list.push(machine);
+                    }
+                }
                 println!();
                 println!("\x1B[92mToday, the free retired machines are:\x1B[0m\n");
 
-                for index in array_index_free_machines {
-                    let name = json_data["data"][index]["name"].as_str().unwrap();
-                    println!("{}", name);
+                for page_number in 1..=last_page as usize {
+                    for freename in &array_free_machines[page_number - 1] {
+                        println!("{}", freename);
+                    }
+                }
+                println!("");
+            } else {
+                for entry in json_data["data"].as_array().unwrap().iter() {
+
+                    let id = entry["id"].as_u64().unwrap_or(0);
+                    let name = entry["name"].as_str().unwrap_or("Name not available").to_string();
+                    let os = entry["os"].as_str().unwrap_or("OS not available").to_string();
+                    let machine_name_os_icon = PlayingMachine::get_os_icon(name, &os, "left");
+                    let points = entry["points"].as_u64().unwrap_or(0);
+                    let difficulty_str = entry["difficultyText"].as_str().unwrap_or("Difficulty not available").to_string();
+                    let user_pwn = entry["authUserInUserOwns"].to_string();
+                    let root_pwn = entry["authUserInRootOwns"].to_string();
+                    let free = entry["free"].as_bool().unwrap_or(false);
+                    let avatar_path = entry["avatar"].as_str().unwrap_or("Avatar not available").to_string();
+
+                    let machine = Machine {
+                        id,
+                        name: machine_name_os_icon,
+                        points,
+                        difficulty_str,
+                        user_pwn,
+                        root_pwn,
+                        free,
+                        avatar: avatar_path,
+                    };
+
+                    machine_list.push(machine);
                 }
             }
+
+            display_table(&machine_list);
         }
         Err(err) => {
             if err.is_timeout() {
