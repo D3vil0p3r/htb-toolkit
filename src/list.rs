@@ -65,7 +65,7 @@ pub async fn list_machines(machine_type: &str) -> Vec<Machine> {
         "retired" => {
             let url = "https://www.hackthebox.com/api/v4/machine/list/retired/paginated";
             let mut result_list: Vec<serde_json::Value> = Vec::new();
-            let last_page_req = fetch_api_async(&url, &appkey).await;
+            let last_page_req = fetch_api_async(url, &appkey).await;
             
             if let Ok(json_meta) = last_page_req {
                 //println!("Received JSON from retired call (page {}): {:?}", page_number, json_value);
@@ -165,7 +165,7 @@ pub async fn list_machines(machine_type: &str) -> Vec<Machine> {
                         println!("{}", freename);
                     }
                 }
-                println!("");
+                println!("\n");
             } else {
                 for entry in json_data["data"].as_array().unwrap().iter() {
 
