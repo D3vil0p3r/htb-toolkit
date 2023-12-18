@@ -14,7 +14,7 @@ pub async fn list_sp_machines() -> Vec<SPMachine> {
     for index in 1..=tiers {
         let mut sp_machine_list: Vec<SPMachine> = Vec::new();
         let tier_lvl = index - 1;
-        let tier_url = format!("https://www.hackthebox.com/api/v4/sp/tier/{}", index);
+        let tier_url = format!("https://labs.hackthebox.com/api/v4/sp/tier/{}", index);
         let result = fetch_api_async(&tier_url, &appkey);
 
         match result.await {
@@ -61,9 +61,9 @@ pub async fn list_machines(machine_type: &str) -> Vec<Machine> {
     let mut last_page: u64 = 1;
 
     let result: Result<serde_json::Value, reqwest::Error> = match machine_type {
-        "free" => fetch_api_async("https://www.hackthebox.com/api/v4/machine/paginated", &appkey).await,
+        "free" => fetch_api_async("https://labs.hackthebox.com/api/v4/machine/paginated", &appkey).await,
         "retired" => {
-            let url = "https://www.hackthebox.com/api/v4/machine/list/retired/paginated";
+            let url = "https://labs.hackthebox.com/api/v4/machine/list/retired/paginated";
             let mut result_list: Vec<serde_json::Value> = Vec::new();
             let last_page_req = fetch_api_async(url, &appkey).await;
             
@@ -77,7 +77,7 @@ pub async fn list_machines(machine_type: &str) -> Vec<Machine> {
 
             for page_number in 1..=last_page {
                 let url = format!(
-                    "https://www.hackthebox.com/api/v4/machine/list/retired/paginated?page={}",
+                    "https://labs.hackthebox.com/api/v4/machine/list/retired/paginated?page={}",
                     page_number
                 );
                 let page_result = fetch_api_async(&url, &appkey).await;

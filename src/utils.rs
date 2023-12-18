@@ -255,7 +255,7 @@ pub async fn htb_machines_to_flypie<T: CommonTrait>(
         let home = env::var("HOME").unwrap();
         let machine_name = machine.get_name().split_once(' ').unwrap().1;
         let machine_avatar = machine.get_avatar().to_string();
-        let avatar_url = format!("https://www.hackthebox.com{}", machine_avatar);
+        let avatar_url = format!("https://labs.hackthebox.com{}", machine_avatar);
 
         let avatar_filename = format!(
             "{}/.local/share/icons/hackthebox/avatar/{}.png",

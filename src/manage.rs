@@ -47,7 +47,7 @@ pub async fn reset_machine() {
         
         // Perform the HTTP request asynchronously
         match client
-            .post("https://www.hackthebox.com/api/v4/vm/reset")
+            .post("https://labs.hackthebox.com/api/v4/vm/reset")
             .header("Authorization", format!("Bearer {}", appkey_clone))
             .json(&reset_data)
             .send()
@@ -102,10 +102,10 @@ pub async fn stop_machine() {
 
     if !active_machine_clone.name.is_empty() { //If there is an active machine, stop it
         let post_req:  String = if machine_type.contains("Starting Point") || (account.vpnname.contains("VIP") ) { //If you are using a VIP or VIP+ VPN, the machine can be stopped only by api/v4/vm/terminate API (even if the machine is free)
-            String::from("https://www.hackthebox.com/api/v4/vm/terminate")
+            String::from("https://labs.hackthebox.com/api/v4/vm/terminate")
         }
         else {
-            String::from("https://www.hackthebox.com/api/v4/machine/stop")
+            String::from("https://labs.hackthebox.com/api/v4/machine/stop")
         };
 
         let blocking_task = spawn(async move {

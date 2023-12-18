@@ -44,7 +44,7 @@ pub async fn play_machine(machine_name: &str) -> Result<(), Box<dyn std::error::
         //For SP Machines and VIP VPN (not Free VPN)
         let client = Client::new();
         let response_result = client
-            .post("https://www.hackthebox.com/api/v4/vm/spawn")
+            .post("https://labs.hackthebox.com/api/v4/vm/spawn")
             .json(&json!({
                 "machine_id": machine_info.machine.id
             }))
@@ -61,7 +61,7 @@ pub async fn play_machine(machine_name: &str) -> Result<(), Box<dyn std::error::
                     println!("{}{}{}", BGREEN, message, RESET);
                 } else if response_status.as_u16() == 400 {
                     // For Free VPN
-                    let post_req = format!("https://www.hackthebox.com/api/v4/machine/play/{}", machine_info.machine.id);
+                    let post_req = format!("https://labs.hackthebox.com/api/v4/machine/play/{}", machine_info.machine.id);
                     let response_play = client
                         .post(post_req)
                         .header("Authorization", format!("Bearer {}", appkey))
@@ -183,7 +183,7 @@ pub async fn submit_flag() {
 
         // Send the POST request to submit the flag
         let response = client
-            .post("https://www.hackthebox.com/api/v4/machine/own")
+            .post("https://labs.hackthebox.com/api/v4/machine/own")
             .json(&flag_data)
             .header("Content-Type", "application/json")
             .header("Authorization", format!("Bearer {}", appkey))
@@ -262,7 +262,7 @@ pub async fn submit_flag() {
     
                     // Send the POST request
                     let response = client
-                        .post("https://www.hackthebox.com/api/v4/machine/review")
+                        .post("https://labs.hackthebox.com/api/v4/machine/review")
                         .json(&review_data)
                         .header("Content-Type", "application/json")
                         .header("Authorization", format!("Bearer {}", appkey_clone))

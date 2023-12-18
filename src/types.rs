@@ -7,7 +7,7 @@ use std::process;
 use std::thread::sleep;
 
 pub async fn get_ip (appkey: &str) -> String {
-    let call_api: &str = "https://www.hackthebox.com/api/v4/machine/active";
+    let call_api: &str = "https://labs.hackthebox.com/api/v4/machine/active";
 
     let result = fetch_api_async(call_api, appkey);
     let mut machine_ip = String::new();
@@ -31,13 +31,13 @@ pub async fn get_ip (appkey: &str) -> String {
                         let mut get_req = String::new();
                         if type_value.contains("Starting Point") {
                             get_req = format!(                        
-                                "https://www.hackthebox.com/api/v4/sp/profile/{}",                        
+                                "https://labs.hackthebox.com/api/v4/sp/profile/{}",                        
                                 &json_data["info"]["id"]
                             );
                         }
                         else if account.vpnname.contains("VIP") {
                             get_req = format!(                        
-                                "https://www.hackthebox.com/api/v4/machine/profile/{}",                        
+                                "https://labs.hackthebox.com/api/v4/machine/profile/{}",                        
                                 &json_data["info"]["name"].as_str().unwrap()
                             );
                         }
@@ -98,7 +98,7 @@ pub struct ActiveMachine {
 impl ActiveMachine {
     pub async fn get_active(appkey: &str) -> Self {
 
-        let call_api: &str = "https://www.hackthebox.com/api/v4/machine/active";
+        let call_api: &str = "https://labs.hackthebox.com/api/v4/machine/active";
 
         let result = fetch_api_async(call_api, appkey);
         
@@ -249,7 +249,7 @@ impl PlayingMachine {
 
     pub async fn get_machine(machine_name: &str, appkey: &str) -> Self {
 
-        let base_api: &str = "https://www.hackthebox.com/api/v4/machine/profile/";
+        let base_api: &str = "https://labs.hackthebox.com/api/v4/machine/profile/";
         let call_api = format!("{}{}", base_api, machine_name);
         
         let result = fetch_api_async(&call_api, appkey);
@@ -264,7 +264,7 @@ impl PlayingMachine {
                     else if message.contains("Starting Point Machine") {
                         let tier_id = &json_data["tierId"].as_u64().unwrap();
                         let get_req = format!(
-                            "https://www.hackthebox.com/api/v4/sp/tier/{}",
+                            "https://labs.hackthebox.com/api/v4/sp/tier/{}",
                             tier_id
                         );
                     
@@ -403,14 +403,14 @@ impl User {
         let vpnname: String;
 
         // Retrieve User username
-        let result = fetch_api_async("https://www.hackthebox.com/api/v4/user/info", appkey);
+        let result = fetch_api_async("https://labs.hackthebox.com/api/v4/user/info", appkey);
     
         match result.await {
             Ok(json_user) => {
                 id = json_user["info"]["id"].as_u64().unwrap();
                 username = json_user["info"]["name"].as_str().unwrap().to_string();
 
-                let user_id_url = format!("https://www.hackthebox.com/api/v4/user/profile/basic/{}", id);
+                let user_id_url = format!("https://labs.hackthebox.com/api/v4/user/profile/basic/{}", id);
                 let details = fetch_api_async(&user_id_url, appkey);
     
                 match details.await {

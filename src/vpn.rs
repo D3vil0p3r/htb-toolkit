@@ -34,7 +34,7 @@ pub fn print_vpn_machine_list() {
 
 async fn vpn_type() -> Option<Vec<String>> {
     let appkey = get_appkey();
-    let result = fetch_api_async("https://www.hackthebox.com/api/v4/connection/status", &appkey);
+    let result = fetch_api_async("https://labs.hackthebox.com/api/v4/connection/status", &appkey);
     let mut vpntype: Vec<String> = Vec::new();
 
     match result.await {
@@ -261,7 +261,7 @@ pub async fn run_vpn(chosen_server: &str) {
         .output()
         .expect("Failed to execute command");
 
-    let switch_url = format!("https://www.hackthebox.com/api/v4/connections/servers/switch/{}", vpn_id);
+    let switch_url = format!("https://labs.hackthebox.com/api/v4/connections/servers/switch/{}", vpn_id);
     let blocking_task = spawn(async move {
         let client = Client::new();
         let response = client
@@ -289,7 +289,7 @@ pub async fn run_vpn(chosen_server: &str) {
         }
 
         let ovpn_url = format!(
-            "https://www.hackthebox.com/api/v4/access/ovpnfile/{}{}",
+            "https://labs.hackthebox.com/api/v4/access/ovpnfile/{}{}",
             vpn_id, vpn_tcp
         );
         let ovpn_response = client
