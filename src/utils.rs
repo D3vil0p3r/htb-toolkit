@@ -247,7 +247,7 @@ pub fn is_display_zero() -> bool {
 pub async fn htb_machines_to_flypie<T: CommonTrait>(
     machine_list: Vec<T>,
 ) -> String {
-    let terminal = "gnome-terminal --";
+    let terminal = "shell-rocket";
     let shell = env::var("SHELL").unwrap();
     let (sender, mut receiver) = mpsc::channel(machine_list.len());
 
@@ -258,7 +258,7 @@ pub async fn htb_machines_to_flypie<T: CommonTrait>(
         let avatar_url = format!("https://labs.hackthebox.com{}", machine_avatar);
 
         let avatar_filename = format!(
-            "{}/.local/share/icons/hackthebox/avatar/{}.png",
+            "{}/.local/share/icons/htb-toolkit/avatar/{}.png",
             home, machine_name
         );
 

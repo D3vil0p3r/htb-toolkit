@@ -66,3 +66,7 @@ Now you can run:
 ```
 htb-toolkit -h
 ```
+
+# FlyPie Integration in Athena OS
+
+HTB Toolkit can be integrated in FlyPie menu of Athena OS by `htb-toolkit -u` command. It will implement **shell-rocket** as terminal wrapper inside the FlyPie menu HTB machine icons to run HTB machines.

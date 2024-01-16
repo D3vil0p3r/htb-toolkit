@@ -37,7 +37,7 @@ async fn main() {
     // Initialization
     // Create avatar folder for free machine icons
     let home = env::var("HOME").unwrap_or_default();
-    let folder_path = format!("{}/.local/share/icons/hackthebox/avatar", home);
+    let folder_path = format!("{}/.local/share/icons/htb-toolkit/avatar", home);
 
     if fs::metadata(&folder_path).is_err() { // Create the folder only if it does not exist
         if let Err(err) = fs::create_dir_all(&folder_path) {
