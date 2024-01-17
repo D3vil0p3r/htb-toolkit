@@ -88,8 +88,8 @@ pub async fn reset_machine() {
 }
 
 pub async fn stop_machine() {
-    let htb_path = format!("{}/.htb.conf", env::var("HOME").unwrap());
-    let htbconfig = HTBConfig::get_current_config(&htb_path);
+    //let htb_path = format!("{}/.htb.conf", env::var("HOME").unwrap());
+    //let htbconfig = HTBConfig::get_current_config(&htb_path);
     let appkey = get_appkey();
     let active_machine = ActiveMachine::get_active(&appkey).await;
 
@@ -127,9 +127,9 @@ pub async fn stop_machine() {
         // Await the result of the blocking task
         blocking_task.await.expect("Blocking task failed");
 
-        if htbconfig.promptchange { //If the prompt is set to change during the playing, when you stop the machine, it should restore the original shell
+        /*if htbconfig.promptchange { //If the prompt is set to change during the playing, when you stop the machine, it should restore the original shell
             restore_shell();
-        }
+        }*/
     }
 }
 
