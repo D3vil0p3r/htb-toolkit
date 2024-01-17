@@ -5,7 +5,7 @@ use crate::colors::*;
 use crate::types::*;
 use crate::vpn::*;
 use pnet::datalink;
-//use regex::Regex;
+use regex::Regex;
 use reqwest::Client;
 use std::fs;
 use std::net::IpAddr;
@@ -14,64 +14,6 @@ use tokio::io::{AsyncWriteExt, BufWriter};
 use tokio::sync::mpsc;
 
 pub fn change_shell(machine_info: &mut PlayingMachine, user_info: &mut PlayingUser) {
-    let result = std::env::var("SHELL").unwrap_or_default();
-    let mut prompt = String::new();
-
-    if result.contains("bash") {
-        prompt = format!(
-            "export PS1=\"\\e[32m\\]┌──[Target:{}🚀🌐IP:{}🔥\\e[34m\\]Attacker:{}📡IP:{}\\e[32m\\]🏅Prize:{} points]\\n└──╼[👾]\\\\[\\e[36m\\]\\$(pwd) $ \\[\\e[0m\\]\"",
-            machine_info.machine.name,
-            machine_info.ip,
-            user_info.user.name,
-            get_interface_ip("tun0").expect("Error on getting tun0 IP address"),
-            machine_info.machine.points
-        );
-    } else if result.contains("fish") {
-        prompt = format!(
-            r#"function fish_prompt
-    set_color 00ff00
-    echo -n "┌──[Target:{}🚀🌐IP:{}"
-    set_color ff00d7
-    echo -n "🔥Attacker:{}📡IP:{}"
-    set_color 00ff00
-    echo "🏅Prize:{} points]"
-    set_color 00ff00
-    echo -n "└──╼[👾]"
-    set_color 00ffff
-    echo (pwd) '$' (set_color normal)
-end"#,
-            machine_info.machine.name,
-            machine_info.ip,
-            user_info.user.name,
-            get_interface_ip("tun0").expect("Error on getting tun0 IP address"),
-            machine_info.machine.points
-        );
-    } else if result.contains("zsh") {
-        prompt = format!(
-            "export PROMPT=\"%F{{46}}┌──[Target:{}🚀🌐IP:{}🔥%F{{201}}Attacker:{}📡IP:{}%F{{46}}🏅Prize:{} points]\"$'\\n'\"└──╼[👾]%F{{44}}%~ $%f \"" ,
-            machine_info.machine.name,
-            machine_info.ip,
-            user_info.user.name,
-            get_interface_ip("tun0").expect("Error on getting tun0 IP address"),
-            machine_info.machine.points
-        );
-    }
-
-    // Run the shell command to set the environment variable
-    let shell_command = match result.as_str() {
-        "bash" | "zsh" => format!("{}", prompt),
-        "fish" => format!("set -x fish_prompt '{}'", prompt),
-        _ => "".to_string(),
-    };
-
-    if !shell_command.is_empty() {
-        Command::new(shell_command)
-            .output()
-            .expect("Failed to execute the export command");
-    }
-}
-
-/*pub fn change_shell(machine_info: &mut PlayingMachine, user_info: &mut PlayingUser) {
     let result = std::env::var("SHELL").unwrap_or_default();
     let mut file_bak = String::new();
     let mut file = String::new();
@@ -138,9 +80,9 @@ end"#,
     } else if result.contains("fish") {
         std::fs::write(&file, &prompt).unwrap_or_default();
     }
-}*/
+}
 
-/*pub fn restore_shell() {
+pub fn restore_shell() {
     let result = env::var("SHELL").unwrap_or_default();
     let mut file_bak = String::new();
     let mut file = String::new();
@@ -159,7 +101,7 @@ end"#,
         //Restore the prompt file from the backup
         fs::copy(&file_bak, &file).expect("Failed to copy file");
     }
-}*/
+}
 
 pub fn display_target_info(machine_info: &PlayingMachine, user_info: &PlayingUser) {
     println!();
