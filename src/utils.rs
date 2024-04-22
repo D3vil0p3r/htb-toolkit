@@ -247,8 +247,7 @@ pub fn is_display_zero() -> bool {
 pub async fn htb_machines_to_flypie<T: CommonTrait>(
     machine_list: Vec<T>,
 ) -> String {
-    let terminal = "shell-rocket";
-    let shell = env::var("SHELL").unwrap();
+    let terminal = "shell-rocket -c";
     let (sender, mut receiver) = mpsc::channel(machine_list.len());
 
     for machine in machine_list.iter() {
@@ -319,8 +318,8 @@ pub async fn htb_machines_to_flypie<T: CommonTrait>(
         .map(|(machine, avatar_filename)| {
             let machine_name = machine.get_name().split_once(' ').unwrap().1;
             let machine_command = format!(
-                "{} /usr/bin/bash -c 'htb-toolkit -m {};'{}''",
-                terminal, machine_name, shell
+                "{} 'htb-toolkit -m {}'",
+                terminal, machine_name
             );
             format!(
                 "{{\\\"name\\\":\\\"{}\\\",\\\"icon\\\":\\\"{}\\\",\\\"type\\\":\\\"Command\\\",\\\"data\\\":{{\\\"command\\\":\\\"{}\\\"}},\\\"angle\\\":-1}},",
