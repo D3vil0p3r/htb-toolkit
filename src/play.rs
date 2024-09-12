@@ -107,11 +107,11 @@ pub async fn play_machine(machine_name: &str) -> Result<(), Box<dyn std::error::
 
     let _ = print_banner();
 
-    if machine_info.machine.user_pwn == "true" {
+    if machine_info.machine.user_pwn {
         println!("{}Hey! You have already found the User Flag! Nice one!{}", BGREEN, RESET);
     }
 
-    if machine_info.machine.root_pwn == "true" {
+    if machine_info.machine.root_pwn {
         println!("{}Hey! You have already found the Root Flag! Keep it up!{}", BGREEN, RESET);
     }
 
@@ -220,7 +220,7 @@ pub async fn submit_flag() {
     // Await the result of the blocking task
     blocking_task.await.expect("Blocking task failed");
 
-    if machine_info.machine.user_pwn != "null" && machine_info.machine.root_pwn != "null" && machine_info.review {
+    if machine_info.machine.user_pwn && machine_info.machine.root_pwn && machine_info.review {
         println!("{}Wonderful! You PWNED {}! Would you like to submit feedback?{}", BYELLOW, machine_info.machine.name, RESET);
 
         loop {

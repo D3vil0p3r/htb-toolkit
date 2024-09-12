@@ -174,8 +174,8 @@ pub struct Machine {
     pub name: String,
     pub points: u64,
     pub difficulty_str: String,
-    pub user_pwn: String,
-    pub root_pwn: String,
+    pub user_pwn: bool,
+    pub root_pwn: bool,
     pub free: bool,
     pub avatar: String,
 }
@@ -306,9 +306,9 @@ impl PlayingMachine {
                                         .unwrap_or("Difficulty not available")
                                         .to_string(),
                                     user_pwn: sub_entry["userOwn"]
-                                        .to_string(),
+                                        .as_bool().unwrap_or(false),
                                     root_pwn: sub_entry["rootOwn"]
-                                        .to_string(),
+                                        .as_bool().unwrap_or(false),
                                     free: true,
                                     avatar: sub_entry["avatar"]
                                         .as_str()
@@ -346,8 +346,8 @@ impl PlayingMachine {
                         name: machine_name_os_icon,
                         points: entry["points"].as_u64().unwrap_or(0),
                         difficulty_str: entry["difficultyText"].as_str().unwrap_or("Difficulty not available").to_string(),
-                        user_pwn: entry["authUserInUserOwns"].to_string(),
-                        root_pwn: entry["authUserInRootOwns"].to_string(),
+                        user_pwn: entry["authUserInUserOwns"].as_bool().unwrap_or(false),
+                        root_pwn: entry["authUserInRootOwns"].as_bool().unwrap_or(false),
                         free: entry["free"].as_bool().unwrap_or(false),
                         avatar: entry["avatar"]
                             .as_str()
