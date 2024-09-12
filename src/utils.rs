@@ -255,54 +255,52 @@ pub async fn htb_machines_to_flypie<T: CommonTrait>(
         let machine_name = machine.get_name().split_once(' ').unwrap().1;
         let machine_avatar = machine.get_avatar().to_string();
         let avatar_url = format!("https://labs.hackthebox.com{}", machine_avatar);
-
         let avatar_filename = format!(
             "{}/.local/share/icons/htb-toolkit/avatar/{}.png",
             home, machine_name
         );
 
-        let sender_clone = sender.clone();
-
-        tokio::spawn(async move {
-            match Client::new().get(&avatar_url).send().await {
-                Ok(response) => {
-                    if response.status().is_success() {
-                        match response.bytes().await {
-                            Ok(image_data) => {
-                                match AsyncFile::create(&avatar_filename).await {
-                                    Ok(avatar_file) => {
-                                        let mut writer = BufWriter::new(avatar_file);
-                                        if let Err(err) = writer.write_all(&image_data).await {
-                                            eprintln!("Failed to write image data: {}", err);
-                                        } else {
-                                            //println!("Sending: {:?}", avatar_filename);
-                                            if let Err(err) = sender_clone.send(avatar_filename).await {
-                                                eprintln!("Send error: {:?}", err);
-                                            }
+        let response = Client::new().get(&avatar_url).send().await;
+        match response {
+            Ok(response) => {
+                if response.status().is_success() {
+                    let image_data = response.bytes().await;
+                    match image_data {
+                        Ok(image_data) => {
+                            let avatar_file = AsyncFile::create(&avatar_filename).await;
+                            match avatar_file {
+                                Ok(avatar_file) => {
+                                    let mut writer = BufWriter::new(avatar_file);
+                                    if let Err(err) = writer.write_all(&image_data).await {
+                                        eprintln!("Failed to write image data: {}", err);
+                                    } else {
+                                        //println!("Sending: {:?}", avatar_filename);
+                                        if let Err(err) = sender.send(avatar_filename).await {
+                                            eprintln!("Send error: {:?}", err);
                                         }
                                     }
-                                    Err(err) => {
-                                        eprintln!("Failed to create file: {:?}", err);
-                                    }
+                                }
+                                Err(err) => {
+                                    eprintln!("Failed to create file: {:?}", err);
                                 }
                             }
-                            Err(err) => {
-                                eprintln!("Failed to read image data: {:?}", err);
-                            }
                         }
-                    } else {
-                        let status_code = response.status().as_u16();
-                        eprintln!(
-                            "Status: {}; Image couldn't be retrieved from {}",
-                            status_code, avatar_url
-                        );
+                        Err(err) => {
+                            eprintln!("Failed to read image data: {:?}", err);
+                        }
                     }
-                }
-                Err(err) => {
-                    eprintln!("HTTP request error: {:?}", err);
+                } else {
+                    let status_code = response.status().as_u16();
+                    eprintln!(
+                        "Status: {}; Image couldn't be retrieved from {}",
+                        status_code, avatar_url
+                    );
                 }
             }
-        });
+            Err(err) => {
+                eprintln!("HTTP request error: {:?}", err);
+            }
+        }
     }
     
     let mut avatar_filenames = Vec::new();
