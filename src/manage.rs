@@ -97,16 +97,19 @@ pub async fn stop_machine() {
     let appkey_clone = appkey.clone(); // Clone the necessary data
     let active_machine_clone = active_machine.clone(); // Clone other data if needed
 
-    let account = User::get_user(&appkey).await;
-    let machine_type = active_machine.mtype;
+    // Currently they are not used but can be useful for the future
+    let _account = User::get_user(&appkey).await;
+    let _machine_type = active_machine.mtype;
 
     if !active_machine_clone.name.is_empty() { //If there is an active machine, stop it
-        let post_req:  String = if machine_type.contains("Starting Point") || (account.vpnname.contains("VIP") ) { //If you are using a VIP or VIP+ VPN, the machine can be stopped only by api/v4/vm/terminate API (even if the machine is free)
+        /*let post_req:  String = if machine_type.contains("Starting Point") || (account.vpnname.contains("VIP") ) { //If you are using a VIP or VIP+ VPN, the machine can be stopped only by api/v4/vm/terminate API (even if the machine is free)
             String::from("https://labs.hackthebox.com/api/v4/vm/terminate")
         }
         else {
             String::from("https://labs.hackthebox.com/api/v4/machine/stop")
-        };
+        };*/
+
+        let post_req = String::from("https://labs.hackthebox.com/api/v4/vm/terminate");
 
         let blocking_task = spawn(async move {
             let client = Client::new();
