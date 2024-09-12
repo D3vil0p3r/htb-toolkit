@@ -107,11 +107,11 @@ pub async fn play_machine(machine_name: &str) -> Result<(), Box<dyn std::error::
 
     let _ = print_banner();
 
-    if machine_info.machine.user_pwn != "null" {
+    if machine_info.machine.user_pwn == "true" {
         println!("{}Hey! You have already found the User Flag! Nice one!{}", BGREEN, RESET);
     }
 
-    if machine_info.machine.root_pwn != "null" {
+    if machine_info.machine.root_pwn == "true" {
         println!("{}Hey! You have already found the Root Flag! Keep it up!{}", BGREEN, RESET);
     }
 
