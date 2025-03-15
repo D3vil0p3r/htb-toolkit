@@ -103,7 +103,7 @@ pub async fn list_machines(machine_type: &str) -> Vec<Machine> {
             Ok(concatenated_json)*/
 
             //Ok(serde_json::Value::String(concatenated_json))
-            Ok(serde_json::Value::Array(result_list.into_iter().map(serde_json::Value::from).collect()))
+            Ok(serde_json::Value::Array(result_list.into_iter().collect()))
         },
         _ => {
             eprintln!("\x1B[31mInvalid machine type: {}\x1B[0m", machine_type);

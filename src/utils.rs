@@ -1,4 +1,4 @@
-use std::process::{Command, Stdio};
+use std::process::{Command, exit, Stdio};
 use std::io::{self, Write};
 use std::env;
 use crate::colors::*;
@@ -12,6 +12,15 @@ use std::net::IpAddr;
 use tokio::fs::File as AsyncFile;
 use tokio::io::{AsyncWriteExt, BufWriter};
 use tokio::sync::mpsc;
+use users::{get_current_uid};
+
+pub fn check_root() {
+    let current_uid = get_current_uid();
+    if current_uid == 0 {
+        eprintln!("Please do not run this application by root or sudo.");
+        exit(1);
+    }
+}
 
 pub fn change_shell(machine_info: &mut PlayingMachine, user_info: &mut PlayingUser) {
     let result = std::env::var("SHELL").unwrap_or_default();

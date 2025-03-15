@@ -20,6 +20,9 @@ use std::process::Command;
 
 #[tokio::main]
 async fn main() {
+
+    check_root();
+
     let args: Vec<String> = env::args().collect();
 
     if args.len() < 2 {
