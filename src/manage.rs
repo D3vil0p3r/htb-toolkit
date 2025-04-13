@@ -7,10 +7,11 @@ use crate::list::*;
 use crate::types::*;
 use crate::utils::*;
 use reqwest::Client;
+use serde_json::Value;
 use std::env;
-use std::fs::{self,File};
-use std::io::{self,Read,Write};
-use std::process::Command;
+use std::fs;
+use std::io::{self,Write};
+use std::path::PathBuf;
 use regex::Regex;
 use tokio::spawn;
 
@@ -154,97 +155,116 @@ pub fn prompt_setting(option: &str) {
     println!("Prompt setting updated to: {}", option);
 }
 
-pub async fn update_machines() -> io::Result<()> {
+fn find_menu_children_mut<'a>(value: &'a mut Value, name: &str) -> Option<&'a mut Vec<Value>> {
+    let obj = value.as_object_mut()?;
+
+    // Check if current node has the target name
+    if let Some(Value::String(existing_name)) = obj.get("name") {
+        if existing_name == name {
+            return obj.get_mut("children")?.as_array_mut();
+        }
+    }
+
+    // Recursively search in children
+    if let Some(Value::Array(children)) = obj.get_mut("children") {
+        for child in children {
+            if let Some(found) = find_menu_children_mut(child, name) {
+                return Some(found);
+            }
+        }
+    }
+
+    None
+}
+
+pub async fn update_machines() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("Retrieving updated data from Hack The Box... Gimme some time hackerzzz...");
     let home = env::var("HOME").unwrap_or_default();
-    let input_config = format!("{}/.input_config.txt", home);
-    let output_config = format!("{}/.output_config.txt", home);
+    //let input_config = format!("{}/.input_config.txt", home);
+    //let output_config = format!("{}/.output_config.txt", home);
+    let menu_path = PathBuf::from(format!("{}/.config/kando/menus.json", home));
 
-    let free_machine_list = list_machines("free");
+    // Free Machines
+    let free_machine_list = list_machines("free").await;
+    let fly_entries = htb_machines_to_flypie(free_machine_list).await;
 
-    let fly_new = htb_machines_to_flypie(free_machine_list.await).await;
-    
-    let dump_command = format!("dconf dump /org/gnome/shell/extensions/flypie/ > {}", input_config);
-    let _ = Command::new("sh")
-        .arg("-c")
-        .arg(&dump_command)
-        .status()?;
+    let menu_data = fs::read_to_string(&menu_path)?;
+    let mut menu_json: Value = serde_json::from_str(&menu_data)?;
 
-    let mut fly_file = File::open(&input_config)?;
-    let mut contents = String::new();
-    fly_file.read_to_string(&mut contents)?;
+    // Navigate to root menu node
+    let root_menu = menu_json
+        .get_mut("menus")
+        .and_then(|menus| menus.get_mut(0))
+        .and_then(|menu| menu.get_mut("root"));
 
-    let fly_pattern = r#"(.*?)(\{\\"name\\":\\"Available Machines\\",\\"icon\\":\\"/usr/share/icons/htb-toolkit/htb-machines.png\\",\\"type\\":\\"CustomMenu\\",\\"children\\":)(.*?)(,\\"angle\\":-1,\\"data\\":\{\})(.*)"#;
-    let re = Regex::new(fly_pattern).unwrap();
+    // Find "Free Machines" children and replace them
+    if let Some(root) = root_menu {
+        if let Some(free_machines_children) = find_menu_children_mut(root, "Free Machines") {
+            //println!("✅ Found 'Free Machines' — updating children...");
+            *free_machines_children = fly_entries;
+        } else {
+            return Err("❌ Couldn't find 'Free Machines' in the menu structure.".into());
+        }
+    } else {
+        return Err("❌ Couldn't find root menu.".into());
+    }
 
-    let modified_contents = re.replace(&contents, |caps: &regex::Captures| {
-        format!("{}{}{}{}{}", &caps[1], &caps[2], fly_new, &caps[4], &caps[5])
-    });
+    // Save the updated JSON
+    let new_menu_str = serde_json::to_string_pretty(&menu_json)?;
+    fs::write(&menu_path, new_menu_str)?;
 
-    let mut f = File::create(&output_config)?;
-    f.write_all(modified_contents.as_bytes())?;
-
-    let load_command = format!("dconf load /org/gnome/shell/extensions/flypie/ < {}", output_config);
-    let _ = Command::new("sh")
-        .arg("-c")
-        .arg(&load_command)
-        .status()?;
 
     // Starting Point Machines
     let sp_machine_list = list_sp_machines().await;
 
     let tiers = 3;
-    for index in 1..=tiers {
-        let tier_lvl = index - 1;
+    for index in 0..tiers {
+        let tier_name = format!("Tier {}", index); // "Tier 0", "Tier 1", "Tier 2"
 
-        // Create a sublist of SPMachines with tier equal to 0
+        // Filter machines by current tier
         let tiered_list: Vec<SPMachine> = sp_machine_list
-            .iter()  // Use iter() instead of into_iter() to borrow instead of move
-            .filter(|machine| machine.tier == tier_lvl)
-            .cloned()  // Clone the filtered machines
+            .iter()
+            .filter(|machine| machine.tier == index)
+            .cloned()
             .collect();
 
-        let fly_new = htb_machines_to_flypie(tiered_list).await;
-        
-        let dump_command = format!("dconf dump /org/gnome/shell/extensions/flypie/ > {}", input_config);
-        let _ = Command::new("sh")
-            .arg("-c")
-            .arg(&dump_command)
-            .status()?;
+        let fly_entries = htb_machines_to_flypie(tiered_list).await;
 
-        let mut fly_file = File::open(&input_config)?;
-        let mut contents = String::new();
-        fly_file.read_to_string(&mut contents)?;
+        let menu_data = fs::read_to_string(&menu_path)?;
+        let mut menu_json: Value = serde_json::from_str(&menu_data)?;
 
-        let fly_pattern = format!(
-            r#"(.*?)(\{{\\"name\\":\\"Tier {}\\",\\"icon\\":\\"/usr/share/icons/htb-toolkit/Tier-{}.svg\\",\\"type\\":\\"CustomMenu\\",\\"children\\":)(.*?)(,\\"angle\\":-1,\\"data\\":{})"#,
-            tier_lvl,
-            tier_lvl,
-            ""
-        );
-        let re = Regex::new(&fly_pattern).unwrap();
+        // Navigate to root menu node
+        let root_menu = menu_json
+            .get_mut("menus")
+            .and_then(|menus| menus.get_mut(0))
+            .and_then(|menu| menu.get_mut("root"));
 
-        let modified_contents = re.replace_all(&contents, |caps: &regex::Captures| {
-            format!(
-                "{}{}{}{}",
-                &caps[1], &caps[2], fly_new, &caps[4]
-            )
-        });
-        let modified_contents_str = modified_contents.to_string();
-        
-        let mut f = File::create(&output_config)?;
-        f.write_all(modified_contents_str.as_bytes())?;
+        // Go to "Starting Point Machines" first
+        if let Some(root) = root_menu {
+            if let Some(sp_children) = find_menu_children_mut(root, "Starting Point Machines") {
+                // Then, within it, go to "Tier N"
+                if let Some(tier_children) = sp_children
+                    .iter_mut()
+                    .find(|child| child.get("name") == Some(&Value::String(tier_name.clone())))
+                    .and_then(|tier| tier.get_mut("children"))
+                    .and_then(|children| children.as_array_mut())
+                {
+                    *tier_children = fly_entries;
+                } else {
+                    return Err(format!("❌ Couldn't find tier menu: {}", tier_name).into());
+                }
+            } else {
+                return Err("❌ Couldn't find 'Starting Point Machines' in the menu structure.".into());
+            }
+        } else {
+            return Err("❌ Couldn't find root menu.".into());
+        }
 
-        let load_command = format!("dconf load /org/gnome/shell/extensions/flypie/ < {}", output_config);
-        let _ = Command::new("sh")
-            .arg("-c")
-            .arg(&load_command)
-            .status()?;
+        // Save changes
+        let new_menu_str = serde_json::to_string_pretty(&menu_json)?;
+        fs::write(&menu_path, new_menu_str)?;
     }
-
-    fs::remove_file(input_config)?;
-    fs::remove_file(output_config)?;
 
     print!("\n{}Machines updated. Press Enter to continue...{}", BGREEN, RESET);
     let mut input = String::new();

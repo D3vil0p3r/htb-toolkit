@@ -1,3 +1,5 @@
+use serde_json::json;
+use serde_json::Value;
 use std::process::{Command, exit, Stdio};
 use std::io::{self, Write};
 use std::env;
@@ -9,6 +11,7 @@ use regex::Regex;
 use reqwest::Client;
 use std::fs;
 use std::net::IpAddr;
+use std::path::Path;
 use tokio::fs::File as AsyncFile;
 use tokio::io::{AsyncWriteExt, BufWriter};
 use tokio::sync::mpsc;
@@ -255,18 +258,20 @@ pub fn is_display_zero() -> bool {
 
 pub async fn htb_machines_to_flypie<T: CommonTrait>(
     machine_list: Vec<T>,
-) -> String {
+) -> Vec<Value> {
     let terminal = "shell-rocket -c";
     let (sender, mut receiver) = mpsc::channel(machine_list.len());
+    let home = env::var("HOME").unwrap();
+    let avatar_dir = format!("{}/.config/kando/icon-themes/avatar", home);
+    let _= fs::create_dir_all(&avatar_dir);
 
     for machine in machine_list.iter() {
-        let home = env::var("HOME").unwrap();
         let machine_name = machine.get_name().split_once(' ').unwrap().1;
         let machine_avatar = machine.get_avatar().to_string();
         let avatar_url = format!("https://labs.hackthebox.com{}", machine_avatar);
         let avatar_filename = format!(
-            "{}/.local/share/icons/htb-toolkit/avatar/{}.png",
-            home, machine_name
+            "{}/{}.png",
+            avatar_dir, machine_name
         );
 
         let response = Client::new().get(&avatar_url).send().await;
@@ -280,63 +285,53 @@ pub async fn htb_machines_to_flypie<T: CommonTrait>(
                             match avatar_file {
                                 Ok(avatar_file) => {
                                     let mut writer = BufWriter::new(avatar_file);
-                                    if let Err(err) = writer.write_all(&image_data).await {
-                                        eprintln!("Failed to write image data: {}", err);
-                                    } else {
-                                        //println!("Sending: {:?}", avatar_filename);
-                                        if let Err(err) = sender.send(avatar_filename).await {
-                                            eprintln!("Send error: {:?}", err);
-                                        }
+                                    if writer.write_all(&image_data).await.is_ok() {
+                                        let _ = sender.send(avatar_filename).await;
                                     }
                                 }
-                                Err(err) => {
-                                    eprintln!("Failed to create file: {:?}", err);
-                                }
+                                _ => eprintln!("Failed to create file: {:?}", avatar_filename),
                             }
                         }
-                        Err(err) => {
-                            eprintln!("Failed to read image data: {:?}", err);
-                        }
+                        Err(err) => eprintln!("Failed to read image data: {:?}", err),
                     }
                 } else {
-                    let status_code = response.status().as_u16();
-                    eprintln!(
-                        "Status: {}; Image couldn't be retrieved from {}",
-                        status_code, avatar_url
-                    );
+                    eprintln!("Bad status code for: {}", avatar_url);
                 }
             }
-            Err(err) => {
-                eprintln!("HTTP request error: {:?}", err);
-            }
+            Err(err) => eprintln!("HTTP error for {}: {:?}", avatar_url, err),
         }
     }
-    
-    let mut avatar_filenames = Vec::new();
 
+    let mut avatar_filenames = Vec::new();
     for _ in 0..machine_list.len() {
         let received_avatar = receiver.recv().await.expect("Receive error");
-        //println!("Received: {:?}", received_avatar);
         avatar_filenames.push(received_avatar);
     }
-    let fly_new = machine_list
+
+    // Return Vec<Value> instead of formatted string
+    machine_list
         .iter()
         .zip(avatar_filenames.iter())
         .map(|(machine, avatar_filename)| {
             let machine_name = machine.get_name().split_once(' ').unwrap().1;
-            let machine_command = format!(
-                "{} 'htb-toolkit -m {}'",
-                terminal, machine_name
-            );
-            format!(
-                "{{\\\"name\\\":\\\"{}\\\",\\\"icon\\\":\\\"{}\\\",\\\"type\\\":\\\"Command\\\",\\\"data\\\":{{\\\"command\\\":\\\"{}\\\"}},\\\"angle\\\":-1}},",
-                machine_name, avatar_filename, machine_command
-            )
+            let icon_filename = Path::new(avatar_filename)
+                .file_name()
+                .unwrap()
+                .to_string_lossy()
+                .to_string();
+            let machine_command = format!("{} 'htb-toolkit -m {}'", terminal, machine_name);
+            json!({
+                "name": machine_name,
+                "icon": icon_filename, // kando needs only the filename, not the entire path
+                "iconTheme": "avatar",
+                "type": "command",
+                "data": {
+                    "command": machine_command
+                },
+                "angle": -1
+            })
         })
-        .collect::<Vec<_>>()
-        .join("");
-
-    format!("[{}]", &fly_new[..fly_new.len() - 1])
+        .collect()
 }
 
 pub fn add_hosts(machine_info: &PlayingMachine) -> Result<(), Box<dyn std::error::Error>> {
