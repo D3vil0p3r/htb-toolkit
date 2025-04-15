@@ -221,7 +221,7 @@ impl PlayingMachine {
         }
     }*/
 
-    pub fn get_os_icon(name: String, os: &String, pos: &str) -> String {
+    pub fn get_os_icon(name: &str, os: &String, pos: &str) -> String {
         let icon_str: String;
         
         if pos == "right" {
@@ -230,7 +230,7 @@ impl PlayingMachine {
             } else if os == "Windows" {
                 icon_str = format!("{} 󰖳", name);
             } else {
-                icon_str = name;
+                icon_str = name.to_string();
             }
         } else if pos == "left" {
             if os == "Linux" {
@@ -238,11 +238,11 @@ impl PlayingMachine {
             } else if os == "Windows" {
                 icon_str = format!("󰖳 {}", name);
             } else {
-                icon_str = name;
+                icon_str = name.to_string();
             }
         }
         else {
-            icon_str = name;
+            icon_str = name.to_string();
         }
         icon_str
     }
@@ -250,80 +250,72 @@ impl PlayingMachine {
     pub async fn get_machine(machine_name: &str, appkey: &str) -> Self {
 
         let base_api: &str = "https://labs.hackthebox.com/api/v4/machine/profile/";
-        let call_api = format!("{}{}", base_api, machine_name);
-        
+        let call_api = format!("{}{}", base_api, machine_name);    
         let result = fetch_api_async(&call_api, appkey);
+    
+        let tiers = 3;
 
         match result.await {
             Ok(json_data) => {
                 if let Some(message) = json_data.get("message").and_then(|m| m.as_str()) {
                     if message.contains("Machine not found") {
-                        eprintln!("\x1B[31m{}.\x1B[0m", message);
-                        process::exit(1); // Exit with a non-zero status code
-                    }
-                    else if message.contains("Starting Point Machine") {
-                        let tier_id = &json_data["tierId"].as_u64().unwrap();
-                        let get_req = format!(
-                            "https://labs.hackthebox.com/api/v4/sp/tier/{}",
-                            tier_id
-                        );
-                    
-                        let sub_result = fetch_api_async(get_req.as_str(), appkey);
-                        if let Ok(sub_json_data) = sub_result.await {
-                            let mut index = 0;
-                            let mut sp_index = 0;
-                            let mut sub_name = &sub_json_data["data"]["machines"][index]["name"];
-                            // Need to search the SP machine in the array of the SP List.
-                            while sub_name != machine_name && index < 20 {
-                                sub_name = &sub_json_data["data"]["machines"][index]["name"];
-                                sp_index = index;
-                                index += 1;
-                            }
-                            let sub_entry = &sub_json_data["data"]["machines"][sp_index];
-                            //println!("WE {}", sub_entry.as_str().unwrap());
-                            let id = sub_entry["id"].as_u64().unwrap();
-                            let name = sub_entry["name"]
-                                        .as_str()
-                                        .unwrap_or("Name not available")
-                                        .to_string();
+                        println!("\x1B[31m{}.\x1B[0m", message);
+                        println!("\x1B[31mSearching for a Starting Point Machine...\x1B[0m");
 
-                            // For a Starting Point machine, unlike the usual machines, we can retrieve the IP address only after the machine is spawn, so here we assign an empty value. We assign its machine_ip in the play() function or reset() function
-                            let machine_ip = String::new();
-                            
-                            let os = sub_entry["os"]
-                                        .as_str()
-                                        .unwrap_or("null")
-                                        .to_string();
-                            let machine_name_os_icon = Self::get_os_icon(name, &os, "right");
-                            
-                            return PlayingMachine {
-                                machine: Machine {
-                                    id,
-                                    name: machine_name_os_icon,
-                                    points: 0,
-                                    difficulty_str: sub_entry["difficultyText"]
-                                        .as_str()
-                                        .unwrap_or("Difficulty not available")
-                                        .to_string(),
-                                    user_pwn: sub_entry["userOwn"]
-                                        .as_bool().unwrap_or(false),
-                                    root_pwn: sub_entry["rootOwn"]
-                                        .as_bool().unwrap_or(false),
-                                    free: true,
-                                    avatar: sub_entry["avatar"]
-                                        .as_str()
-                                        .unwrap_or("Avatar not available")
-                                        .to_string(),
-                                },
-                                sp_flag: true,
-                                os,
-                                ip: machine_ip,
-                                review: false,
-                            };
-                        } else {
-                            eprintln!("\x1B[31mError fetching Starting Point data.\x1B[0m");
-                            process::exit(1); // Exit with a non-zero status code
+                        for index in 1..=tiers {
+                            let tier_url = format!("https://labs.hackthebox.com/api/v4/sp/tier/{}", index);
+                            let sub_result = fetch_api_async(&tier_url, appkey);
+                        
+                            match sub_result.await {
+                                Ok(sub_json_data) => {                                
+                                    for entry in sub_json_data["data"]["machines"].as_array().unwrap().iter() {
+                                        let id = entry["id"].as_u64().unwrap();
+                                        let name = entry["name"].as_str().unwrap_or("Name not available");
+                                        let points = entry["static_points"].as_u64().unwrap();
+                                        let os = entry["os"].as_str().unwrap_or("OS not available").to_string();
+                                        let difficulty_str = entry["difficultyText"].as_str().unwrap_or("Difficulty not available").to_string();
+                                        let avatar_path = entry["avatar"].as_str().unwrap_or("Avatar not available").to_string();
+                                        let user_pwn = entry["userOwn"]
+                                            .as_bool().unwrap_or(false);
+                                        let root_pwn = entry["rootOwn"]
+                                            .as_bool().unwrap_or(false);
+                                        let sp_flag = true;
+                                        let ip = String::new(); // Will be retrieved later
+                                        let machine_name_os_icon = Self::get_os_icon(name, &os, "right");
+                                        
+                                        if name == machine_name {
+                                            println!("Found machine: {}", name);
+                                            return PlayingMachine {
+                                                machine: Machine {
+                                                    id,
+                                                    name: machine_name_os_icon,
+                                                    points,
+                                                    difficulty_str,
+                                                    user_pwn,
+                                                    root_pwn,
+                                                    free: true,
+                                                    avatar: avatar_path,
+                                                },
+                                                sp_flag,
+                                                os,
+                                                ip,
+                                                review: false,
+                                            };
+                                        }
+                                    }
+                                }
+                                Err(err) => {
+                                    if err.is_timeout() {
+                                        eprintln!("Encountered timeout");
+                                    } else {
+                                        eprintln!("\x1B[31mError. Maybe your API key is incorrect or expired. Renew your API key by running htb-toolkit -k reset.\x1B[0m");
+                                    }
+                                }
+                            }
                         }
+                    } else {
+                        eprintln!("\x1B[31mError fetching Starting Point data.\x1B[0m");
+                        process::exit(1); // Exit with a non-zero status code
                     }
                 }
                 
@@ -338,7 +330,7 @@ impl PlayingMachine {
                             .as_str()
                             .unwrap_or("null")
                             .to_string();
-                let machine_name_os_icon = Self::get_os_icon(name, &os, "right");
+                let machine_name_os_icon = Self::get_os_icon(&name, &os, "right");
 
                 PlayingMachine {
                     machine: Machine {
