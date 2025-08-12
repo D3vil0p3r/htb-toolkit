@@ -117,8 +117,8 @@ pub fn restore_shell() {
 
 pub fn display_target_info(machine_info: &PlayingMachine, user_info: &PlayingUser) {
     println!();
-    println!("{}Our secret agent gathered some information about the target:{}", BYELLOW, RESET);
-    println!("{}┌────────────────────────────────────────────────────┐{}", BGREEN, RESET);
+    println!("{BYELLOW}Our secret agent gathered some information about the target:{RESET}");
+    println!("{BGREEN}┌────────────────────────────────────────────────────┐{RESET}");
     println!("{}| Target Name       : {}{}{}", BGREEN, BCYAN, machine_info.machine.name, RESET);
     println!("{}| Target OS         : {}{}{}", BGREEN, BCYAN, machine_info.os, RESET);
     println!("{}| Target IP         : {}{}{}", BGREEN, BCYAN, machine_info.ip, RESET);
@@ -126,12 +126,12 @@ pub fn display_target_info(machine_info: &PlayingMachine, user_info: &PlayingUse
     println!("{}| Difficulty        : {}{}{}", BGREEN, BCYAN, machine_info.machine.difficulty_str, RESET);
     println!("{}| User Flag         : {}{}{}", BGREEN, BCYAN, machine_info.machine.user_pwn, RESET);
     println!("{}| Root Flag         : {}{}{}", BGREEN, BCYAN, machine_info.machine.root_pwn, RESET);
-    println!("{}|────────────────────────────────────────────────────|{}", BGREEN, RESET);
+    println!("{BGREEN}|────────────────────────────────────────────────────|{RESET}");
     println!("{}| Attacker          : {}{}{}", BGREEN, RED, user_info.user.name, RESET);
     println!("{}| Attacker IP       : {}{}{}", BGREEN, RED, user_info.ip, RESET);
-    println!("{}└────────────────────────────────────────────────────┘{}", BGREEN, RESET);
+    println!("{BGREEN}└────────────────────────────────────────────────────┘{RESET}");
     println!();
-    println!("{}The agent left this information in the console.{}\n", BYELLOW, RESET);
+    println!("{BYELLOW}The agent left this information in the console.{RESET}\n");
 }
 
 pub fn get_interface_ip(interface_name: &str) -> Option<String> {
@@ -147,7 +147,7 @@ pub fn get_interface_ip(interface_name: &str) -> Option<String> {
             }
         }
     } else {
-        println!("Interface not found: {}", interface_name);
+        println!("Interface not found: {interface_name}");
     }
     
     None // Return None if interface not found or IP not found
@@ -183,7 +183,7 @@ pub fn print_banner() -> Result<(), Box<dyn std::error::Error>> {
         let decompressed = String::from_utf8_lossy(&gunzip_output.stdout).into_owned().replace("\\x1b", "\x1b"); // .replace is needed to apply the colors on the banner string
         
         let mut stdout = io::stdout();
-        writeln!(stdout, "{}", decompressed)?;
+        writeln!(stdout, "{decompressed}")?;
     } else {
         eprintln!("'gunzip' command failed");
     }
@@ -262,16 +262,15 @@ pub async fn htb_machines_to_flypie<T: CommonTrait>(
     let terminal = "shell-rocket -c";
     let (sender, mut receiver) = mpsc::channel(machine_list.len());
     let home = env::var("HOME").unwrap();
-    let avatar_dir = format!("{}/.config/kando/icon-themes/avatar", home);
+    let avatar_dir = format!("{home}/.config/kando/icon-themes/avatar");
     let _= fs::create_dir_all(&avatar_dir);
 
     for machine in machine_list.iter() {
         let machine_name = machine.get_name().split_once(' ').unwrap().1;
         let machine_avatar = machine.get_avatar().to_string();
-        let avatar_url = format!("https://labs.hackthebox.com{}", machine_avatar);
+        let avatar_url = format!("https://htb-mp-prod-public-storage.s3.eu-central-1.amazonaws.com{machine_avatar}");
         let avatar_filename = format!(
-            "{}/{}.png",
-            avatar_dir, machine_name
+            "{avatar_dir}/{machine_name}.png"
         );
 
         let response = Client::new().get(&avatar_url).send().await;
@@ -289,16 +288,16 @@ pub async fn htb_machines_to_flypie<T: CommonTrait>(
                                         let _ = sender.send(avatar_filename).await;
                                     }
                                 }
-                                _ => eprintln!("Failed to create file: {:?}", avatar_filename),
+                                _ => eprintln!("Failed to create file: {avatar_filename:?}"),
                             }
                         }
-                        Err(err) => eprintln!("Failed to read image data: {:?}", err),
+                        Err(err) => eprintln!("Failed to read image data: {err:?}"),
                     }
                 } else {
-                    eprintln!("Bad status code for: {}", avatar_url);
+                    eprintln!("Bad status code for: {avatar_url}");
                 }
             }
-            Err(err) => eprintln!("HTTP error for {}: {:?}", avatar_url, err),
+            Err(err) => eprintln!("HTTP error for {avatar_url}: {err:?}"),
         }
     }
 
@@ -319,7 +318,7 @@ pub async fn htb_machines_to_flypie<T: CommonTrait>(
                 .unwrap()
                 .to_string_lossy()
                 .to_string();
-            let machine_command = format!("{} 'htb-toolkit -m {}'", terminal, machine_name);
+            let machine_command = format!("{terminal} 'htb-toolkit -m {machine_name}'");
             json!({
                 "name": machine_name,
                 "icon": icon_filename, // kando needs only the filename, not the entire path
@@ -337,7 +336,7 @@ pub async fn htb_machines_to_flypie<T: CommonTrait>(
 pub fn add_hosts(machine_info: &PlayingMachine) -> Result<(), Box<dyn std::error::Error>> {
     loop {
         let mut yn = String::new();
-        print!("\n{}Would you like to assign a domain name to the target machine IP address and store it in /etc/hosts (y/n)? {}", BGREEN, RESET);
+        print!("\n{BGREEN}Would you like to assign a domain name to the target machine IP address and store it in /etc/hosts (y/n)? {RESET}");
         io::stdout().flush().expect("Flush failed!");
         io::stdin().read_line(&mut yn).expect("Failed to read input");
 
@@ -345,7 +344,7 @@ pub fn add_hosts(machine_info: &PlayingMachine) -> Result<(), Box<dyn std::error
             "y" | "Y" => {
                 let hosts_path = std::path::Path::new("/etc/hosts");
                 let domain_name = format!("{}.htb", machine_info.machine.name.split_whitespace().next().unwrap_or_default().to_string().to_lowercase()); // Using this set of func to remove the os icon after the machine name
-                print!("{}Type the domain name to assign {}[{}]{}: {}", BGREEN, RED, domain_name, BGREEN, RESET);
+                print!("{BGREEN}Type the domain name to assign {RED}[{domain_name}]{BGREEN}: {RESET}");
                 io::stdout().flush().expect("Flush failed!");
 
                 let mut ans = String::new();
@@ -377,14 +376,14 @@ pub fn add_hosts(machine_info: &PlayingMachine) -> Result<(), Box<dyn std::error
                     // Check if the new entry already exists in the hosts file. If so, remove it because it could be placed at bottom than a more recent (and wrong) one
                     if current_content.contains(&new_entry) {
                         println!("Hosts file already contains the new entry. Removing old entry...");
-                        let sed_remove_pattern = format!("/{}/d", new_entry);
+                        let sed_remove_pattern = format!("/{new_entry}/d");
 
                         std::process::Command::new("sudo")
                             .args(["sed", "-i", &sed_remove_pattern, "/etc/hosts"])
                             .status()
                             .expect("Failed to edit hosts file");
                     }
-                    let sed_pattern = format!("1i{}", new_entry);
+                    let sed_pattern = format!("1i{new_entry}");
                     std::process::Command::new("sudo")
                         .args(["sed", "-i", &sed_pattern, "/etc/hosts"])
                         .status()

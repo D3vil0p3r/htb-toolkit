@@ -24,7 +24,7 @@ pub fn get_appkey() -> String {
                     eprintln!("File not found");
                     String::new()
                 } else {
-                    eprintln!("Error: {}", error);
+                    eprintln!("Error: {error}");
                     String::new()
                 }
             }
@@ -42,12 +42,12 @@ pub fn get_appkey() -> String {
                     String::from_utf8_lossy(&output.stdout).to_string()
                 } else {
                     let error_output = String::from_utf8_lossy(&output.stderr);
-                    eprintln!("'secret-tool' command failed:\n{}", error_output);
+                    eprintln!("'secret-tool' command failed:\n{error_output}");
                     String::new()
                 }
             }
             Err(error) => {
-                eprintln!("Error: {}", error);
+                eprintln!("Error: {error}");
                 String::new()
             }
         }
@@ -80,7 +80,7 @@ pub fn set_appkey() {
             if store_result.is_ok() {
                 println!("Hack The Box App Token successfully stored.");
             } else {
-                eprintln!("Error storing API Key: {:?}", store_result);
+                eprintln!("Error storing API Key: {store_result:?}");
                 std::process::exit(1);
             }
         }
@@ -114,7 +114,7 @@ pub fn delete_appkey() {
                 println!("Hack The Box API Key successfully deleted.");
             } else {
                 let error_output = String::from_utf8_lossy(&clear_output.stderr);
-                eprintln!("Error deleting API Key:\n{}", error_output);
+                eprintln!("Error deleting API Key:\n{error_output}");
             }
         }
     } else {

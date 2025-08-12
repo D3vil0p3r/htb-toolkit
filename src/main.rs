@@ -30,7 +30,7 @@ async fn main() {
         match print_banner() {
             Ok(_) => {}
             Err(error) => {
-                eprintln!("Error: {}", error);
+                eprintln!("Error: {error}");
             }
         }
         get_help();
@@ -40,16 +40,16 @@ async fn main() {
     // Initialization
     // Create avatar folder for free machine icons
     let home = env::var("HOME").unwrap_or_default();
-    let folder_path = format!("{}/.local/share/icons/htb-toolkit/avatar", home);
+    let folder_path = format!("{home}/.local/share/icons/htb-toolkit/avatar");
 
     if fs::metadata(&folder_path).is_err() { // Create the folder only if it does not exist
         if let Err(err) = fs::create_dir_all(&folder_path) {
-            eprintln!("Error creating folder: {}", err);
+            eprintln!("Error creating folder: {err}");
         }
     }
     
     // Create HTB config file if not existing
-    let htb_config = format!("{}/.htb.conf", home);
+    let htb_config = format!("{home}/.htb.conf");
 
     let file = Path::new(&htb_config);
     if !file.exists() {
@@ -73,7 +73,7 @@ async fn main() {
             match print_banner() {
                 Ok(_) => {}
                 Err(error) => {
-                    eprintln!("Error: {}", error);
+                    eprintln!("Error: {error}");
                 }
             }
             get_help();
@@ -134,7 +134,7 @@ async fn main() {
             match print_banner() {
                 Ok(_) => {}
                 Err(error) => {
-                    eprintln!("Error: {}", error);
+                    eprintln!("Error: {error}");
                 }
             }
             println!("Invalid command: {}", args[1]);

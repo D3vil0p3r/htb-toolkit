@@ -18,7 +18,7 @@ fn fetch_api(api_url: &str, appkey: &str) -> Result<serde_json::Value, reqwest::
         .build()?;
     
     let response = client.get(api_url)
-        .header("Authorization", format!("Bearer {}", appkey))
+        .header("Authorization", format!("Bearer {appkey}"))
         .header("content-type", "application/json" )
         .send()?;
 
@@ -29,14 +29,14 @@ fn fetch_api(api_url: &str, appkey: &str) -> Result<serde_json::Value, reqwest::
         eprintln!("HTTP 429: Too many requests. Please wait and try again later.");
         std::process::exit(1);
     } else if (500..600).contains(&status_code) {
-        eprintln!("HTTP {}: Server error. Please try again later.", status_code);
+        eprintln!("HTTP {status_code}: Server error. Please try again later.");
         std::process::exit(1);
     }
 
     let json_data = match serde_json::from_str(&response_text) {
         Ok(data) => data,
         Err(err) => {
-            eprintln!("Check if your API key is incorrect or expired. Renew your API key by running 'htb-toolkit -k reset'. Error details: {}", err);
+            eprintln!("Check if your API key is incorrect or expired. Renew your API key by running 'htb-toolkit -k reset'. Error details: {err}");
             print!("Press Enter to continue...");
             let mut input = String::new();
             io::stdout().flush().expect("Flush failed!");

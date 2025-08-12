@@ -8,7 +8,7 @@ use std::env;
 use std::io::{self,Write};
 use reqwest::Client;
 use serde::Serialize;
-use serde_json::json;
+use serde_json::{json,Value};
 use tokio::spawn;
 
 #[derive(Serialize)]
@@ -35,7 +35,7 @@ pub async fn play_machine(machine_name: &str) -> Result<(), Box<dyn std::error::
     let mut machine_info = PlayingMachine::get_machine(machine_name, &appkey).await;
 
     println!("Stopping any active machine...");
-    println!("{}Note: if you interrupted the htb-toolkit before the spawn of a previous machine, give me two minutes to end the old spawn process and stop the related machine...{}", BYELLOW, RESET);
+    println!("{BYELLOW}Note: if you interrupted the htb-toolkit before the spawn of a previous machine, give me two minutes to end the old spawn process and stop the related machine...{RESET}");
     stop_machine().await;
 
     check_vpn(machine_info.sp_flag).await;    
@@ -49,7 +49,7 @@ pub async fn play_machine(machine_name: &str) -> Result<(), Box<dyn std::error::
                 "machine_id": machine_info.machine.id
             }))
             .header("Content-Type", "application/json")
-            .header("Authorization", format!("Bearer {}", appkey))
+            .header("Authorization", format!("Bearer {appkey}"))
             .send()
             .await;
         
@@ -58,13 +58,17 @@ pub async fn play_machine(machine_name: &str) -> Result<(), Box<dyn std::error::
                 let response_status = response.status();
                 if response_status.is_success() {
                     let message = response.text().await.expect("Failed to get response text");
-                    println!("{}{}{}", BGREEN, message, RESET);
+                    let json: Value = serde_json::from_str(&message).expect("Failed to parse JSON");
+                    let message = json["message"]
+                        .as_str()
+                        .expect("Missing or invalid 'message' field");
+                    println!("{BGREEN}{message}{RESET}");
                 } else if response_status.as_u16() == 400 {
                     // For Free VPN
                     let post_req = format!("https://labs.hackthebox.com/api/v4/machine/play/{}", machine_info.machine.id);
                     let response_play = client
                         .post(post_req)
-                        .header("Authorization", format!("Bearer {}", appkey))
+                        .header("Authorization", format!("Bearer {appkey}"))
                         .send()
                         .await;
                     
@@ -73,27 +77,27 @@ pub async fn play_machine(machine_name: &str) -> Result<(), Box<dyn std::error::
                             let subresponse_status = subresponse.status();
                             if subresponse_status.is_success() {
                                 let subresponse_text = subresponse.text().await.expect("Failed to get response text");
-                                println!("Response: {}", subresponse_text);
+                                println!("Response: {subresponse_text}");
                             } else {
                                 let subresponse_text = subresponse.text().await.expect("Failed to get response text");
-                                println!("Response: {}", subresponse_text);
-                                eprintln!("Request failed with status: {}", subresponse_status);
+                                println!("Response: {subresponse_text}");
+                                eprintln!("Request failed with status: {subresponse_status}");
                                 std::process::exit(1);
                             }
                         }
                         Err(err) => {
-                            eprintln!("Error on POST request: {:?}", err);
+                            eprintln!("Error on POST request: {err:?}");
                         }
                     }
                 } else {
                     let response_text = response.text().await.expect("Failed to get response text");
-                    println!("Response: {}", response_text);
-                    eprintln!("Request failed with status: {}", response_status);
+                    println!("Response: {response_text}");
+                    eprintln!("Request failed with status: {response_status}");
                     std::process::exit(1);
                 }
             }
             Err(err) => {
-                eprintln!("Error on POST request: {:?}", err);
+                eprintln!("Error on POST request: {err:?}");
             }
         }
     });
@@ -108,11 +112,11 @@ pub async fn play_machine(machine_name: &str) -> Result<(), Box<dyn std::error::
     let _ = print_banner();
 
     if machine_info.machine.user_pwn {
-        println!("{}Hey! You have already found the User Flag! Nice one!{}", BGREEN, RESET);
+        println!("{BGREEN}Hey! You have already found the User Flag! Nice one!{RESET}");
     }
 
     if machine_info.machine.root_pwn {
-        println!("{}Hey! You have already found the Root Flag! Keep it up!{}", BGREEN, RESET);
+        println!("{BGREEN}Hey! You have already found the Root Flag! Keep it up!{RESET}");
     }
 
     if htbconfig.promptchange { //If the prompt is set to change during the playing...
@@ -134,15 +138,15 @@ pub async fn submit_flag() {
     let mut machine_name = String::new();
     let mut machine_rating = String::new();
 
-    println!("{}Did you get a flag? Please, submit it and continue your hacking path. Good Luck!{}", BGREEN, RESET);
+    println!("{BGREEN}Did you get a flag? Please, submit it and continue your hacking path. Good Luck!{RESET}");
 
-    print!("{}Submit the flag:{} ", RED, RESET);
+    print!("{RED}Submit the flag:{RESET} ");
     io::stdout().flush().expect("Flush failed!");
     io::stdin()
         .read_line(&mut flag)
         .expect("Failed to read line");
 
-    print!("{}Specify the machine name:{} ", BGREEN, RESET);
+    print!("{BGREEN}Specify the machine name:{RESET} ");
     io::stdout().flush().expect("Flush failed!");
     io::stdin()
         .read_line(&mut machine_name)
@@ -150,22 +154,22 @@ pub async fn submit_flag() {
 
     let machine_info = PlayingMachine::get_machine(&machine_name, &appkey).await;
 
-    println!("{}How much is the difficulty of this machine?{}", BCYAN, RESET);
+    println!("{BCYAN}How much is the difficulty of this machine?{RESET}");
     println!();
-    println!("{}[10 --> Piece of Cake!]{}", BGREEN, RESET);
-    println!("{}[20 --> Very Easy!]{}", BGREEN, RESET);
-    println!("{}[30 --> Easy!]{}", BGREEN, RESET);
-    println!("{}[40 --> Not Too Easy!]{}", BYELLOW, RESET);
-    println!("{}[50 --> Medium!]{}", BYELLOW, RESET);
-    println!("{}[60 --> A Bit Hard!]{}", BYELLOW, RESET);
-    println!("{}[70 --> Hard!]{}", BYELLOW, RESET);
-    println!("{}[80 --> Too Hard!]{}", RED, RESET);
-    println!("{}[90 --> Extremely Hard!]{}", RED, RESET);
-    println!("{}[100 --> Brainfuck!]{}", RED, RESET);
+    println!("{BGREEN}[10 --> Piece of Cake!]{RESET}");
+    println!("{BGREEN}[20 --> Very Easy!]{RESET}");
+    println!("{BGREEN}[30 --> Easy!]{RESET}");
+    println!("{BYELLOW}[40 --> Not Too Easy!]{RESET}");
+    println!("{BYELLOW}[50 --> Medium!]{RESET}");
+    println!("{BYELLOW}[60 --> A Bit Hard!]{RESET}");
+    println!("{BYELLOW}[70 --> Hard!]{RESET}");
+    println!("{RED}[80 --> Too Hard!]{RESET}");
+    println!("{RED}[90 --> Extremely Hard!]{RESET}");
+    println!("{RED}[100 --> Brainfuck!]{RESET}");
     println!();
 
     
-    print!("{}Difficulty Rating:{} ", BYELLOW, RESET);
+    print!("{BYELLOW}Difficulty Rating:{RESET} ");
     io::stdout().flush().expect("Flush failed!");
     io::stdin()
         .read_line(&mut machine_rating)
@@ -186,7 +190,7 @@ pub async fn submit_flag() {
             .post("https://labs.hackthebox.com/api/v4/machine/own")
             .json(&flag_data)
             .header("Content-Type", "application/json")
-            .header("Authorization", format!("Bearer {}", appkey))
+            .header("Authorization", format!("Bearer {appkey}"))
             .send();
   
         match response.await {
@@ -195,7 +199,7 @@ pub async fn submit_flag() {
                 if status.is_success() {
                     // Print the response text
                     let response_text = resp.text().await.expect("Failed to read response text");
-                    println!("{}", response_text);
+                    println!("{response_text}");
                 } else {
                     // Status 400: Incorrect flag
                     let response_text = resp.text().await.expect("Failed to read response text");
@@ -203,16 +207,16 @@ pub async fn submit_flag() {
 
                     if let Ok(json) = parsed_response {
                         if let Some(message) = json.get("message").and_then(|m| m.as_str()) {
-                            println!("{}", message);
+                            println!("{message}");
                         }
                     } else {
-                        eprintln!("Request failed with status: {}", status);
+                        eprintln!("Request failed with status: {status}");
                         std::process::exit(1);
                     }
                 }
             }
             Err(err) => {
-                eprintln!("Error sending request: {}", err);
+                eprintln!("Error sending request: {err}");
             }
         }
     });
@@ -234,15 +238,15 @@ pub async fn submit_flag() {
     
             match choice {
                 "1" => {
-                    println!("{}Please, write a headline for your feedback (max 50 chars):{}", BGREEN, RESET);
+                    println!("{BGREEN}Please, write a headline for your feedback (max 50 chars):{RESET}");
                     let mut review_headline = String::new();
                     io::stdin().read_line(&mut review_headline).expect("Failed to read input");
     
-                    println!("{}Please, submit your feedback (max 2000 chars):{}", BGREEN, RESET);
+                    println!("{BGREEN}Please, submit your feedback (max 2000 chars):{RESET}");
                     let mut review_machine = String::new();
                     io::stdin().read_line(&mut review_machine).expect("Failed to read input");
     
-                    println!("{}How many stars would you give to this machine?{}", BGREEN, RESET);
+                    println!("{BGREEN}How many stars would you give to this machine?{RESET}");
                     print!("Stars (1 to 5): ");
     
                     let mut review_stars = String::new();
@@ -265,7 +269,7 @@ pub async fn submit_flag() {
                         .post("https://labs.hackthebox.com/api/v4/machine/review")
                         .json(&review_data)
                         .header("Content-Type", "application/json")
-                        .header("Authorization", format!("Bearer {}", appkey_clone))
+                        .header("Authorization", format!("Bearer {appkey_clone}"))
                         .send()
                         .await
                         .expect("Failed to send request");

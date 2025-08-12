@@ -13,23 +13,23 @@ use serde_json::Value;
 use tokio::spawn;
 
 pub fn print_vpn_sp_list() {
-    println!("{}┌────────────────────────────────────────────────────┐{}", BCYAN, RESET);
-    println!("{}| Starting Point Free VPN : EUSPFree1 USSPFree1      |{}", BCYAN, RESET);
-    println!("{}| Starting Point VIP VPN  : EUSPVIP1  USSPVIP1       |{}", BYELLOW, RESET);
-    println!("{}└────────────────────────────────────────────────────┘{}", BYELLOW, RESET);
+    println!("{BCYAN}┌────────────────────────────────────────────────────┐{RESET}");
+    println!("{BCYAN}| Starting Point Free VPN : EUSPFree1 USSPFree1      |{RESET}");
+    println!("{BYELLOW}| Starting Point VIP VPN  : EUSPVIP1  USSPVIP1       |{RESET}");
+    println!("{BYELLOW}└────────────────────────────────────────────────────┘{RESET}");
 }
 
 pub fn print_vpn_machine_list() {
-    println!("{}┌────────────────────────────────────────────────────┐{}", BCYAN, RESET);
-    println!("{}| Machines Free VPN       : EUFree1 EUFree2 EUFree3  |{}", BCYAN, RESET);
-    println!("{}|                           USFree1 USFree2 USFree3  |{}", BCYAN, RESET);
-    println!("{}|                           AUFree1 SGFree1          |{}", BCYAN, RESET);
-    println!("{}| Machines VIP VPN        : EUVIP1 to EUVIP28        |{}", BYELLOW, RESET);
-    println!("{}|                           USVIP1 to USVIP27        |{}", BYELLOW, RESET);
-    println!("{}|                           SGVIP1 SGVIP2 AUVIP1     |{}", BYELLOW, RESET);
-    println!("{}| Machines VIP+ VPN       : EUVIP+1 EUVIP+2          |{}", RED, RESET);
-    println!("{}|                         : USVIP+1 SGVIP+1          |{}", RED, RESET);
-    println!("{}└────────────────────────────────────────────────────┘{}", RED, RESET);
+    println!("{BCYAN}┌────────────────────────────────────────────────────┐{RESET}");
+    println!("{BCYAN}| Machines Free VPN       : EUFree1 EUFree2 EUFree3  |{RESET}");
+    println!("{BCYAN}|                           USFree1 USFree2 USFree3  |{RESET}");
+    println!("{BCYAN}|                           AUFree1 SGFree1          |{RESET}");
+    println!("{BYELLOW}| Machines VIP VPN        : EUVIP1 to EUVIP28        |{RESET}");
+    println!("{BYELLOW}|                           USVIP1 to USVIP27        |{RESET}");
+    println!("{BYELLOW}|                           SGVIP1 SGVIP2 AUVIP1     |{RESET}");
+    println!("{RED}| Machines VIP+ VPN       : EUVIP+1 EUVIP+2          |{RESET}");
+    println!("{RED}|                         : USVIP+1 SGVIP+1          |{RESET}");
+    println!("{RED}└────────────────────────────────────────────────────┘{RESET}");
 }
 
 async fn vpn_type() -> Option<Vec<String>> {
@@ -75,13 +75,11 @@ pub async fn check_vpn(machine_spflag: bool) {
         let mut yn = String::new();
         if vpntypes.len() > 1 {
             println!(
-                "\nThe following VPN types are already running: {}. You have multiple VPNs running. The oldest one will go down automatically in some minutes.",
-                vpntypes_str
+                "\nThe following VPN types are already running: {vpntypes_str}. You have multiple VPNs running. The oldest one will go down automatically in some minutes."
             );
         } else {
             println!(
-                "\nThe following VPN type is already running: {}.",
-                vpntypes_str
+                "\nThe following VPN type is already running: {vpntypes_str}."
             );
         }
 
@@ -230,7 +228,7 @@ pub async fn run_vpn(chosen_server: &str) {
 
     loop {
         let mut input = String::new();
-        print!("\n{}Would you like to connect to Hack The Box VPN by UDP or TCP? [UDP] {}", BGREEN, RESET);
+        print!("\n{BGREEN}Would you like to connect to Hack The Box VPN by UDP or TCP? [UDP] {RESET}");
         io::stdout().flush().expect("Flush failed!");
         io::stdin().read_line(&mut input).expect("Failed to read line");
         input = input.trim().to_string(); //remove \n from Enter keyboard button
@@ -248,12 +246,12 @@ pub async fn run_vpn(chosen_server: &str) {
                 break;
             }
             _ => {
-                println!("{}Please select UDP or TCP:{}", BGREEN, RESET);
+                println!("{BGREEN}Please select UDP or TCP:{RESET}");
             }
         }
     }
 
-    println!("\nConnecting to {} server [id={}]\n", key, vpn_id);
+    println!("\nConnecting to {key} server [id={vpn_id}]\n");
 
     let _output = Command::new("sudo")
         .arg("killall")
@@ -261,12 +259,12 @@ pub async fn run_vpn(chosen_server: &str) {
         .output()
         .expect("Failed to execute command");
 
-    let switch_url = format!("https://labs.hackthebox.com/api/v4/connections/servers/switch/{}", vpn_id);
+    let switch_url = format!("https://labs.hackthebox.com/api/v4/connections/servers/switch/{vpn_id}");
     let blocking_task = spawn(async move {
         let client = Client::new();
         let response = client
             .post(switch_url)
-            .header("Authorization", format!("Bearer {}", appkey))
+            .header("Authorization", format!("Bearer {appkey}"))
             .send()
             .await;
 
@@ -276,25 +274,24 @@ pub async fn run_vpn(chosen_server: &str) {
                     let response_text = response.text().await.unwrap();
                     let response_json: Value = serde_json::from_str(&response_text).unwrap();
                     let message = response_json["message"].as_str().unwrap();
-                    println!("Switch response: {}", message);
+                    println!("Switch response: {message}");
                 } else {
                     eprintln!("API call failed with status: {}", response.status());
                     std::process::exit(1);
                 }
             }
             Err(err) => {
-                eprintln!("API call error: {:?}", err);
+                eprintln!("API call error: {err:?}");
                 std::process::exit(1);
             }
         }
 
         let ovpn_url = format!(
-            "https://labs.hackthebox.com/api/v4/access/ovpnfile/{}{}",
-            vpn_id, vpn_tcp
+            "https://labs.hackthebox.com/api/v4/access/ovpnfile/{vpn_id}{vpn_tcp}"
         );
         let ovpn_response = client
             .get(ovpn_url)
-            .header("Authorization", format!("Bearer {}", appkey))
+            .header("Authorization", format!("Bearer {appkey}"))
             .send()
             .await;
 
@@ -305,7 +302,7 @@ pub async fn run_vpn(chosen_server: &str) {
                     let ovpn_file_path = format!("{}/lab-vpn.ovpn", std::env::var("HOME").unwrap_or_default());
                     // Write content to a file named "lab-vpn.ovpn"
                     if let Err(err) = fs::write(&ovpn_file_path, ovpn_content) {
-                        eprintln!("Error writing to file: {}", err);
+                        eprintln!("Error writing to file: {err}");
                     } else {
                         println!("File saved successfully.");
                     }
@@ -321,7 +318,7 @@ pub async fn run_vpn(chosen_server: &str) {
                     if status.success() {
                         println!("OpenVPN started successfully");
                     } else {
-                        eprintln!("OpenVPN process exited with error: {:?}", status);
+                        eprintln!("OpenVPN process exited with error: {status:?}");
                         std::process::exit(1);
                     }
                 } else {
@@ -330,7 +327,7 @@ pub async fn run_vpn(chosen_server: &str) {
                 }
             }
             Err(err) => {
-                eprintln!("API call error: {:?}", err);
+                eprintln!("API call error: {err:?}");
                 std::process::exit(1);
             }
         }

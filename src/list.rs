@@ -14,7 +14,7 @@ pub async fn list_sp_machines() -> Vec<SPMachine> {
     for index in 1..=tiers {
         let mut sp_machine_list: Vec<SPMachine> = Vec::new();
         let tier_lvl = index - 1;
-        let tier_url = format!("https://labs.hackthebox.com/api/v4/sp/tier/{}", index);
+        let tier_url = format!("https://labs.hackthebox.com/api/v4/sp/tier/{index}");
         let result = fetch_api_async(&tier_url, &appkey);
 
         match result.await {
@@ -33,7 +33,7 @@ pub async fn list_sp_machines() -> Vec<SPMachine> {
 
                     sp_machine_list.push(sp_machine);
                 }
-                println!("{}Tier {} Starting Point machines:{}\n", BYELLOW, tier_lvl, RESET);
+                println!("{BYELLOW}Tier {tier_lvl} Starting Point machines:{RESET}\n");
                 display_table_sp(&sp_machine_list);
 
                 all_sp_machine_list.extend(sp_machine_list);
@@ -72,13 +72,12 @@ pub async fn list_machines(machine_type: &str) -> Vec<Machine> {
                 last_page = json_meta["meta"]["last_page"].as_u64().unwrap();
                 //println!("{}", last_page);
             } else {
-                eprintln!("Error fetching data for last page {}", last_page);
+                eprintln!("Error fetching data for last page {last_page}");
             }
 
             for page_number in 1..=last_page {
                 let url = format!(
-                    "https://labs.hackthebox.com/api/v4/machine/list/retired/paginated?page={}",
-                    page_number
+                    "https://labs.hackthebox.com/api/v4/machine/list/retired/paginated?page={page_number}"
                 );
                 let page_result = fetch_api_async(&url, &appkey).await;
 
@@ -87,7 +86,7 @@ pub async fn list_machines(machine_type: &str) -> Vec<Machine> {
                     //println!("Received JSON from retired call (page {}): {:?}", page_number, json_value);
                     result_list.push(json_value);
                 } else {
-                    eprintln!("Error fetching data for page {}", page_number);
+                    eprintln!("Error fetching data for page {page_number}");
                 }
             }
 
@@ -106,7 +105,7 @@ pub async fn list_machines(machine_type: &str) -> Vec<Machine> {
             Ok(serde_json::Value::Array(result_list.into_iter().collect()))
         },
         _ => {
-            eprintln!("\x1B[31mInvalid machine type: {}\x1B[0m", machine_type);
+            eprintln!("\x1B[31mInvalid machine type: {machine_type}\x1B[0m");
             return machine_list;
         }
     };
@@ -162,7 +161,7 @@ pub async fn list_machines(machine_type: &str) -> Vec<Machine> {
 
                 for page_number in 1..=last_page as usize {
                     for freename in &array_free_machines[page_number - 1] {
-                        println!("{}", freename);
+                        println!("{freename}");
                     }
                 }
                 println!("\n");

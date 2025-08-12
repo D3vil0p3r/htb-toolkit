@@ -226,17 +226,17 @@ impl PlayingMachine {
         
         if pos == "right" {
             if os == "Linux" {
-                icon_str = format!("{} ", name);
+                icon_str = format!("{name} ");
             } else if os == "Windows" {
-                icon_str = format!("{} 󰖳", name);
+                icon_str = format!("{name} 󰖳");
             } else {
                 icon_str = name.to_string();
             }
         } else if pos == "left" {
             if os == "Linux" {
-                icon_str = format!(" {}", name);
+                icon_str = format!(" {name}");
             } else if os == "Windows" {
-                icon_str = format!("󰖳 {}", name);
+                icon_str = format!("󰖳 {name}");
             } else {
                 icon_str = name.to_string();
             }
@@ -250,7 +250,7 @@ impl PlayingMachine {
     pub async fn get_machine(machine_name: &str, appkey: &str) -> Self {
 
         let base_api: &str = "https://labs.hackthebox.com/api/v4/machine/profile/";
-        let call_api = format!("{}{}", base_api, machine_name);    
+        let call_api = format!("{base_api}{machine_name}");    
         let result = fetch_api_async(&call_api, appkey);
     
         let tiers = 3;
@@ -259,11 +259,11 @@ impl PlayingMachine {
             Ok(json_data) => {
                 if let Some(message) = json_data.get("message").and_then(|m| m.as_str()) {
                     if message.contains("Machine not found") {
-                        println!("\x1B[31m{}.\x1B[0m", message);
+                        println!("\x1B[31m{message}.\x1B[0m");
                         println!("\x1B[31mSearching for a Starting Point Machine...\x1B[0m");
 
                         for index in 1..=tiers {
-                            let tier_url = format!("https://labs.hackthebox.com/api/v4/sp/tier/{}", index);
+                            let tier_url = format!("https://labs.hackthebox.com/api/v4/sp/tier/{index}");
                             let sub_result = fetch_api_async(&tier_url, appkey);
                         
                             match sub_result.await {
@@ -284,7 +284,7 @@ impl PlayingMachine {
                                         let machine_name_os_icon = Self::get_os_icon(name, &os, "right");
                                         
                                         if name == machine_name {
-                                            println!("Found machine: {}", name);
+                                            println!("Found machine: {name}");
                                             return PlayingMachine {
                                                 machine: Machine {
                                                     id,
@@ -401,7 +401,7 @@ impl User {
                 id = json_user["info"]["id"].as_u64().unwrap();
                 username = json_user["info"]["name"].as_str().unwrap().to_string();
 
-                let user_id_url = format!("https://labs.hackthebox.com/api/v4/user/profile/basic/{}", id);
+                let user_id_url = format!("https://labs.hackthebox.com/api/v4/user/profile/basic/{id}");
                 let details = fetch_api_async(&user_id_url, appkey);
     
                 match details.await {
@@ -467,7 +467,7 @@ impl PlayingUser {
             Some(ip) => {
                 userip = ip;
             }
-            None => println!("{}Failed to retrieve IP address of {}. Be sure your HTB VPN is active.{}", RED, interface_name, RESET),
+            None => println!("{RED}Failed to retrieve IP address of {interface_name}. Be sure your HTB VPN is active.{RESET}"),
         }
 
         PlayingUser {

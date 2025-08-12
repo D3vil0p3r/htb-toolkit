@@ -49,7 +49,7 @@ pub async fn reset_machine() {
         // Perform the HTTP request asynchronously
         match client
             .post("https://labs.hackthebox.com/api/v4/vm/reset")
-            .header("Authorization", format!("Bearer {}", appkey_clone))
+            .header("Authorization", format!("Bearer {appkey_clone}"))
             .json(&reset_data)
             .send()
             .await
@@ -59,13 +59,13 @@ pub async fn reset_machine() {
                     //let reset_message = reset_response.text().await.expect("Failed to get response text."); //Print the response as text for debug
                     let reset_message = reset_response.json::<serde_json::Value>().await.expect("Failed to parse JSON response. Probably there is no an Active Machine to reset.");
                     let reset_message = reset_message.get("message").unwrap_or(&serde_json::Value::Null).as_str().unwrap();
-                    println!("{}{}{}", BGREEN, reset_message, RESET);
+                    println!("{BGREEN}{reset_message}{RESET}");
                 } else {
                     eprintln!("Failed to reset the machine. HTTP status code: {}", reset_response.status());
                 }
             }
             Err(err) => {
-                eprintln!("Error on POST request: {:?}", err);
+                eprintln!("Error on POST request: {err:?}");
             }
         }
     });
@@ -117,7 +117,7 @@ pub async fn stop_machine() {
             let stop_data = serde_json::json!({"machine_id": active_machine_clone.id});
             let stop_response = client
                 .post(post_req)
-                .header("Authorization", format!("Bearer {}", appkey_clone))
+                .header("Authorization", format!("Bearer {appkey_clone}"))
                 .json(&stop_data)
                 .send()
                 .await
@@ -125,7 +125,7 @@ pub async fn stop_machine() {
 
             let stop_message = stop_response.json::<serde_json::Value>().await.expect("Failed to parse JSON response.");
             let stop_message = stop_message.get("message").unwrap_or(&serde_json::Value::Null).as_str().unwrap();
-            println!("{}{}{}", BGREEN, stop_message, RESET);
+            println!("{BGREEN}{stop_message}{RESET}");
         });
 
         // Await the result of the blocking task
@@ -139,7 +139,7 @@ pub async fn stop_machine() {
 
 pub fn prompt_setting(option: &str) {
     let home = env::var("HOME").unwrap_or_default();
-    let htb_config = format!("{}/.htb.conf", home);
+    let htb_config = format!("{home}/.htb.conf");
 
     let content = fs::read_to_string(&htb_config)
         .expect("Failed to read HTB config file");
@@ -147,12 +147,12 @@ pub fn prompt_setting(option: &str) {
     let re = Regex::new(r"prompt_change=\w+")
         .expect("Failed to create regular expression");
 
-    let new_content = re.replace(&content, format!("prompt_change={}", option));
+    let new_content = re.replace(&content, format!("prompt_change={option}"));
 
     fs::write(&htb_config, new_content.to_string())
         .expect("Failed to write updated content to HTB config file");
 
-    println!("Prompt setting updated to: {}", option);
+    println!("Prompt setting updated to: {option}");
 }
 
 fn find_menu_children_mut<'a>(value: &'a mut Value, name: &str) -> Option<&'a mut Vec<Value>> {
@@ -183,7 +183,7 @@ pub async fn update_machines() -> Result<(), Box<dyn std::error::Error>> {
     let home = env::var("HOME").unwrap_or_default();
     //let input_config = format!("{}/.input_config.txt", home);
     //let output_config = format!("{}/.output_config.txt", home);
-    let menu_path = PathBuf::from(format!("{}/.config/kando/menus.json", home));
+    let menu_path = PathBuf::from(format!("{home}/.config/kando/menus.json"));
 
     // Free Machines
     let free_machine_list = list_machines("free").await;
@@ -220,7 +220,7 @@ pub async fn update_machines() -> Result<(), Box<dyn std::error::Error>> {
 
     let tiers = 3;
     for index in 0..tiers {
-        let tier_name = format!("Tier {}", index); // "Tier 0", "Tier 1", "Tier 2"
+        let tier_name = format!("Tier {index}"); // "Tier 0", "Tier 1", "Tier 2"
 
         // Filter machines by current tier
         let tiered_list: Vec<SPMachine> = sp_machine_list
@@ -252,7 +252,7 @@ pub async fn update_machines() -> Result<(), Box<dyn std::error::Error>> {
                 {
                     *tier_children = fly_entries;
                 } else {
-                    return Err(format!("❌ Couldn't find tier menu: {}", tier_name).into());
+                    return Err(format!("❌ Couldn't find tier menu: {tier_name}").into());
                 }
             } else {
                 return Err("❌ Couldn't find 'Starting Point Machines' in the menu structure.".into());
@@ -266,7 +266,7 @@ pub async fn update_machines() -> Result<(), Box<dyn std::error::Error>> {
         fs::write(&menu_path, new_menu_str)?;
     }
 
-    print!("\n{}Machines updated. Press Enter to continue...{}", BGREEN, RESET);
+    print!("\n{BGREEN}Machines updated. Press Enter to continue...{RESET}");
     let mut input = String::new();
     io::stdout().flush().expect("Flush failed!");
     io::stdin().read_line(&mut input).expect("Failed to read line");
