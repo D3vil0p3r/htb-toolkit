@@ -15,14 +15,28 @@ pub async fn fetch_api_async(api_url: &str, appkey: &str) -> Result<serde_json::
 fn fetch_api(api_url: &str, appkey: &str) -> Result<serde_json::Value, reqwest::Error> {
     let client = Client::builder()
         .timeout(Duration::from_secs(120))
+        .redirect(reqwest::redirect::Policy::custom(|attempt| {
+            // Preserve headers on redirect
+            attempt.follow()
+        }))
         .build()?;
-    
+
     let response = client.get(api_url)
-        .header("Authorization", format!("Bearer {appkey}"))
-        .header("content-type", "application/json" )
+        .header("Authorization", format!("Bearer {}", appkey))
+        .header("Content-Type", "application/json")
+        .header("Accept", "application/json")
+        .header("User-Agent", "htb-toolkit")
         .send()?;
 
     let status_code = response.status().as_u16();
+    
+    // Check for authentication errors before reading body
+    if status_code == 401 {
+        eprintln!("\x1B[31mHTTP 401: Unauthenticated. Your API key may be incorrect or expired.\x1B[0m");
+        eprintln!("Run 'htb-toolkit -k reset' to set a new key.");
+        std::process::exit(1);
+    }
+    
     let response_text = response.text()?;
 
     if status_code == 429 {
