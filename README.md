@@ -21,6 +21,25 @@ Showcase of HTB Toolkit:
 [![HTB Toolkit Asciicast](https://github.com/D3vil0p3r/htb-toolkit/assets/83867734/cfc8aac4-f58e-4b44-8ac1-12e1842c801f)](https://asciinema.org/a/605148)
 Interactive source: [Asciinema](https://asciinema.org/a/605148)
 
+## Troubleshooting API Token Storage
+
+If you experience issues with the keyring (e.g., `secret-tool` errors), HTB Toolkit supports a fallback configuration file:
+
+1. Create the config directory:
+````bash
+   mkdir -p ~/.config/htb-toolkit
+````
+
+2. Store your App Token in the config file:
+````bash
+   echo "YOUR_APP_TOKEN_HERE" > ~/.config/htb-toolkit/token
+   chmod 600 ~/.config/htb-toolkit/token
+````
+
+The toolkit will automatically use this fallback if the keyring is unavailable.
+
+**Note**: The keyring method is preferred for security. Only use the config file as a fallback.
+
 # Install
 
 ## Arch-based Linux distro
@@ -41,13 +60,16 @@ Install the following runtime dependencies:
 coreutils gnome-keyring gzip libsecret noto-fonts-emoji openssl openvpn ttf-nerd-fonts-symbols
 ```
 **Debian-based distros**
-```
+````
 coreutils fonts-noto-color-emoji gnome-keyring gzip libsecret-tools libssl-dev openvpn
+
+# Important: Ensure gnome-keyring daemon is running
+eval $(gnome-keyring-daemon --start --components=secrets 2>/dev/null)
 
 wget https://github.com/ryanoasis/nerd-fonts/releases/latest/download/NerdFontsSymbolsOnly.zip
 unzip NerdFontsSymbolsOnly.zip -x LICENSE readme.md -d ~/.fonts
 fc-cache -fv
-```
+````
 Install the following build dependencies:
 ```
 git cargo

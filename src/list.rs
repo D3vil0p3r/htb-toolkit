@@ -166,7 +166,17 @@ pub async fn list_machines(machine_type: &str) -> Vec<Machine> {
                 }
                 println!("\n");
             } else {
-                for entry in json_data["data"].as_array().unwrap().iter() {
+                // For "free" machines, json_data is the direct API response with "data" field
+                let data_array = match json_data.get("data").and_then(|d| d.as_array()) {
+                    Some(arr) => arr,
+                    None => {
+                        eprintln!("\x1B[31mERROR: Failed to parse 'data' field for free machines\x1B[0m");
+                        eprintln!("Response structure: {}", serde_json::to_string_pretty(&json_data).unwrap_or_default());
+                        return machine_list;
+                    }
+                };
+                
+                for entry in data_array.iter() {
 
                     let id = entry["id"].as_u64().unwrap_or(0);
                     let name = entry["name"].as_str().unwrap_or("Name not available").to_string();

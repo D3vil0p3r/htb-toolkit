@@ -10,48 +10,63 @@ fn read_file_contents(path: &str) -> Result<String, io::Error> {
     Ok(content)
 }
 
+fn get_appkey_from_keyring() -> Option<String> {
+    let output = Command::new("secret-tool")
+        .arg("lookup")
+        .arg("htb-api")
+        .arg("user-htb-api")
+        .output()
+        .ok()?;
+    
+    if output.status.success() {
+        let key = String::from_utf8_lossy(&output.stdout)
+            .trim()
+            .to_string();
+        if !key.is_empty() {
+            return Some(key);
+        }
+    }
+    None
+}
+
 pub fn get_appkey() -> String {
+    // Try Docker secret first
     if is_inside_container() && is_display_empty() {
         let secret_path = "/run/secrets/htb-api";
-        
+
         match read_file_contents(secret_path) {
             Ok(secret_content) => {
-                
-                secret_content.replace('\n', "")
-            }
-            Err(error) => {
-                if error.kind() == io::ErrorKind::NotFound {
-                    eprintln!("File not found");
-                    String::new()
-                } else {
-                    eprintln!("Error: {error}");
-                    String::new()
-                }
-            }
-        }
-    } else {
-        let output = Command::new("secret-tool")
-            .arg("lookup")
-            .arg("htb-api")
-            .arg("user-htb-api")
-            .output();
-
-        match output {
-            Ok(output) => {
-                if output.status.success() {
-                    String::from_utf8_lossy(&output.stdout).to_string()
-                } else {
-                    let error_output = String::from_utf8_lossy(&output.stderr);
-                    eprintln!("'secret-tool' command failed:\n{error_output}");
-                    String::new()
+                let key = secret_content.replace('\n', "");
+                if !key.is_empty() {
+                    return key;
                 }
             }
             Err(error) => {
-                eprintln!("Error: {error}");
-                String::new()
+                if error.kind() != io::ErrorKind::NotFound {
+                    eprintln!("Error reading Docker secret: {error}");
+                }
             }
         }
     }
+
+    // Try keyring
+    if let Some(key) = get_appkey_from_keyring() {
+        return key;
+    }
+
+    // Fallback to config file
+    let config_path = format!("{}/.config/htb-toolkit/token", 
+        std::env::var("HOME").unwrap_or_default());
+    
+    if let Ok(key) = read_file_contents(&config_path) {
+        let key = key.trim().to_string();
+        if !key.is_empty() {
+            return key;
+        }
+    }
+
+    // Return empty string
+    String::new()
 }
 
 pub fn set_appkey() {
@@ -68,10 +83,9 @@ pub fn set_appkey() {
 
             let mut store_process = Command::new(store_command)
                 .args(store_args)
-                .stdin(Stdio::inherit()) // Pass stdin from parent process
-                .stdout(Stdio::inherit()) // Pass stdout to parent process
-                .stderr(Stdio::inherit()) // Pass stderr to parent process
-                // They are needed to invoke the prompt to type the App Token
+                .stdin(Stdio::inherit())
+                .stdout(Stdio::inherit())
+                .stderr(Stdio::inherit())
                 .spawn()
                 .expect("Failed to execute secret-tool command");
 
